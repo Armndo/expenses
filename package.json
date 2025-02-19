@@ -8,8 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm run build && sh -c \"$(curl -s https://assets.pezatomico.com/scripts/deploy)\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "deploy": "npm run build && sh -c \"$(curl -s https://assets.pezatomico.com/scripts/deploy)\""
   },
   "dependencies": {
     "react": "^19.0.0",
