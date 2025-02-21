@@ -50,17 +50,30 @@ export function MainView({ }) {
     }
 
     expense.amount = +expense.amount
-    const expenses = [ ...state.sources[index].expenses ]
-    expenses.push(expense)
-    const source = { ...state.sources[index], expenses }
-    const sources = [ ...state.sources ]
-    sources[index] = source
 
-    setState(prev => ({
-      ...prev,
-      editing: null,
-      sources
-    }))
+    axios.post(
+      `${api_url}/expenses`,
+      expense,
+      {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+      }
+    ).then(res => {
+      const expenses = [ ...state.sources[index].expenses ]
+      expenses.push(res.data)
+      const source = { ...state.sources[index], expenses }
+      const sources = [ ...state.sources ]
+      sources[index] = source
+  
+      setState(prev => ({
+        ...prev,
+        editing: null,
+        sources
+      }))
+    }).catch(err => {
+      console.log(err)
+    })
   }
 
   function update(index, index2) {
@@ -72,30 +85,57 @@ export function MainView({ }) {
     }
 
     expense.amount = +expense.amount
-    const expenses = [ ...state.sources[index].expenses ]
-    expenses[index2] = expense
-    const source = { ...state.sources[index], expenses }
-    const sources = [ ...state.sources ]
-    sources[index] = source
 
-    setState(prev => ({
-      ...prev,
-      editing: null,
-      sources
-    }))
+    axios.put(
+      `${api_url}/expenses/${expense.id}`,
+      expense,
+      {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+      }
+    ).then(res => {
+      const expenses = [ ...state.sources[index].expenses ]
+      expenses[index2] = res.data
+      const source = { ...state.sources[index], expenses }
+      const sources = [ ...state.sources ]
+      sources[index] = source
+  
+      setState(prev => ({
+        ...prev,
+        editing: null,
+        sources
+      }))
+    }).catch(err => {
+      console.log(err)
+    })
   }
 
   function destroy(index, index2) {
-    const expenses = [ ...state.sources[index].expenses ]
-    expenses.splice(index2, 1)
-    const source = { ...state.sources[index], expenses }
-    const sources = [ ...state.sources ]
-    sources[index] = source
-
-    setState(prev => ({
-      ...prev,
-      sources
-    }))
+    axios.delete(
+      `${api_url}/expenses/${state.sources[index].expenses[index2].id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+        params: {
+          source_id: state.sources[index].id,
+        },
+      }
+    ).then(() => {
+      const expenses = [ ...state.sources[index].expenses ]
+      expenses.splice(index2, 1)
+      const source = { ...state.sources[index], expenses }
+      const sources = [ ...state.sources ]
+      sources[index] = source
+  
+      setState(prev => ({
+        ...prev,
+        sources
+      }))
+    }).catch(err => {
+      console.log(err)
+    })
   }
 
   useEffect(() => {
@@ -123,7 +163,7 @@ export function MainView({ }) {
               {state.editing === null || state.editing?.id !== expense.id ?
                 <>
                   <td>
-                    {new Date(expense.date).toLocaleDateString()}
+                    {expense.date}
                   </td>
                   <td>
                     ${expense.amount.toFixed(2)}
