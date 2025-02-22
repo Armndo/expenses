@@ -1,0 +1,56 @@
+.expenses-container {
+  background: #f0f0f0;
+  display: block;
+  width: 100%;
+  overflow-x: scroll;
+  display: flex;
+}
+
+.expenses-container > div:nth-child(-1) > table {
+  background: blue;
+}
+
+.expenses-modal {
+  background: rgba(0, 0, 0, .35);
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+  top: 0;
+  left: 0;
+  display: none;
+  cursor: not-allowed;
+}
+
+.expenses-modal.show {
+  display: unset;
+}
+
+.expenses-modal > div {
+  background: #f0f0f0;
+  padding: 1rem;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  cursor: default;
+  z-index: 1000;
+}
+
+.expenses-modal-form > select, .expenses-modal-form > input, .expenses-modal-form > button {
+  width: 100%;
+}
+
+.expenses-modal-form > input[type="date"], .expenses-modal-form > input[type="number"], .expenses-modal-form > textarea {
+  width: calc(100% - 8px);
+}
+
+.expenses-loading {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+textarea {
+  resize: none;
+}
