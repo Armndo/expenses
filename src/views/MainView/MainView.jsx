@@ -241,6 +241,21 @@ export function MainView({ }) {
                 }
               </tr>)}
             </tbody>
+            <tfoot>
+              <tr>
+                <th>
+                  total
+                </th>
+                <td colSpan={3}>
+                  ${source.expenses.reduce((a, b) => a + b.amount, 0).toFixed(2)}
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={4}>
+                  <button style={{ width: "100%" }} onClick={() => setState(prev => ({ ...prev, editing: { date: (new Date()).toISOString().split("T")[0], amount: null, description: null, source_id: source.id } }))}>+</button>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>)}
       </div> :
