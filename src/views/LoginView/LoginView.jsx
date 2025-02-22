@@ -25,26 +25,26 @@ export function LoginView({}) {
         password: state.password
       }
     ).then(res => {
-      sessionStorage.setItem("token", res.data.token)
+      localStorage.setItem("token", res.data.token)
       navigate("/")
     }).catch(err => {
       console.error(err)
     })
   }
 
-  async function isLogged() {
+  function isLogged() {
     axios.get(
       `${api_url}/info`,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("token")}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`
         }
       }
     ).then(res => {
       navigate("/")
     }).catch(err => {
       if (err?.status === 401) {
-        sessionStorage.removeItem("token")
+        localStorage.removeItem("token")
       }
     }).finally(() => setState(prev => ({ ...prev, loading: false })))
   }

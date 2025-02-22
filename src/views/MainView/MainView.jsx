@@ -19,17 +19,34 @@ export function MainView({ }) {
       `${api_url}/expenses`,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
     ).then(res => {
       setState(prev => ({ ...prev, sources: res.data }))
     }).catch(err => {
       if (err?.status === 401) {
-        sessionStorage.removeItem("token")
+        localStorage.removeItem("token")
         navigate("/login")
       }
     }).finally(() => setState(prev => ({ ...prev, loading: false })))
+  }
+
+  function logout() {
+    axios.post(
+      `${api_url}/logout`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    )
+    .catch(err => {})
+    .finally(() => {
+      localStorage.removeItem("token")
+      navigate("/login")
+    })
   }
 
   function editExpense(target, field, value) {
@@ -80,7 +97,7 @@ export function MainView({ }) {
       expense,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
     ).then(res => {
@@ -97,7 +114,10 @@ export function MainView({ }) {
         sources,
       }))
     }).catch(err => {
-      console.log(err)
+      if (err?.status === 401) {
+        localStorage.removeItem("token")
+        navigate("/login")
+      }
     })
   }
 
@@ -116,7 +136,7 @@ export function MainView({ }) {
       expense,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
     ).then(res => {
@@ -132,7 +152,10 @@ export function MainView({ }) {
         sources
       }))
     }).catch(err => {
-      console.log(err)
+      if (err?.status === 401) {
+        localStorage.removeItem("token")
+        navigate("/login")
+      }
     })
   }
 
@@ -141,7 +164,7 @@ export function MainView({ }) {
       `${api_url}/expenses/${state.sources[index].expenses[index2].id}`,
       {
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         params: {
           source_id: state.sources[index].id,
@@ -159,7 +182,10 @@ export function MainView({ }) {
         sources
       }))
     }).catch(err => {
-      console.log(err)
+      if (err?.status === 401) {
+        localStorage.removeItem("token")
+        navigate("/login")
+      }
     })
   }
 
@@ -172,7 +198,7 @@ export function MainView({ }) {
       <div className="expenses-title">
         <h1>expenses</h1>
         <button onClick={openModal}>add expense</button>
-        <button>add source</button>
+        <button onClick={logout}>logout</button>
       </div>
       <div className={`expenses-modal ${state.modal ? "show" : ""}`} onClick={closeModal}>
         <div className="expenses-modal-form" onClick={e => e.stopPropagation()}>
@@ -257,6 +283,7 @@ export function MainView({ }) {
       <div className="expenses-container">
         <h2>no expenses recorded</h2>
       </div>}
+      total: ${state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0).toFixed(2)}
     </div> :
     <div className="expenses-loading">loading</div>
   )
