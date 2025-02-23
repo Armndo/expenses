@@ -1,13 +1,15 @@
 .expenses-container {
   background: #f0f0f0;
   display: block;
-  width: 100%;
+  max-width: 100%;
+  width: fit-content;
   overflow-x: scroll;
   display: flex;
 }
 
-.expenses-container > div:nth-child(-1) > table {
-  background: blue;
+.expenses-container td {
+  padding: .25rem;
+  text-align: center;
 }
 
 .expenses-modal {
@@ -53,4 +55,9 @@
 
 textarea {
   resize: none;
+}
+
+tfoot td {
+  background: #e0e0e0;
+  text-align: center;
 }

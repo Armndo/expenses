@@ -2,6 +2,7 @@ import { api_url } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { formatNumber, standardDate } from "@/utils/functions"
 import "./MainView.css"
 
 export function MainView({ }) {
@@ -11,7 +12,10 @@ export function MainView({ }) {
     editing: null,
     modal: false,
     expense: null,
+    simple: localStorage.getItem("simple") === "true",
+    lastSource: +localStorage.getItem("lastSource"),
   })
+
   const navigate = useNavigate()
 
   function load() {
@@ -22,14 +26,15 @@ export function MainView({ }) {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
-    ).then(res => {
-      setState(prev => ({ ...prev, sources: res.data }))
-    }).catch(err => {
+    )
+    .then(res => setState(prev => ({ ...prev, sources: res.data })))
+    .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")
       }
-    }).finally(() => setState(prev => ({ ...prev, loading: false })))
+    })
+    .finally(() => setState(prev => ({ ...prev, loading: false })))
   }
 
   function logout() {
@@ -42,11 +47,24 @@ export function MainView({ }) {
         }
       }
     )
-    .catch(err => {})
+    .catch(() => {})
     .finally(() => {
       localStorage.removeItem("token")
       navigate("/login")
     })
+  }
+
+  function selectSource(value) {
+    localStorage.setItem("lastSource", value)
+
+    setState(prev => ({
+      ...prev,
+      expense: {
+        ...prev.expense,
+        source_id: value,
+      },
+      lastSource: value,
+    }))
   }
 
   function editExpense(target, field, value) {
@@ -66,10 +84,10 @@ export function MainView({ }) {
       ...prev,
       modal: true,
       expense: {
-        date: (new Date()).toISOString().split("T")[0],
+        date: standardDate(),
         amount: null,
         description: null,
-        source_id: state.sources.length === 1 ? state.sources[0].id : null,
+        source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
       },
     }))
   }
@@ -79,6 +97,15 @@ export function MainView({ }) {
       ...prev,
       modal: false,
       expense: null,
+    }))
+  }
+
+  function changeMode() {
+    localStorage.setItem("simple", !state.simple)
+
+    setState(prev => ({
+      ...prev,
+      simple: !prev.simple,
     }))
   }
 
@@ -92,6 +119,11 @@ export function MainView({ }) {
 
     expense.amount = +expense.amount
 
+    setState(prev => ({
+      ...prev,
+      loading: true,
+    }))
+
     axios.post(
       `${api_url}/expenses`,
       expense,
@@ -100,10 +132,12 @@ export function MainView({ }) {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
-    ).then(res => {
+    )
+    .then(res => {
       const expenses = [ ...state.sources[index].expenses ]
       expenses.push(res.data)
       const source = { ...state.sources[index], expenses }
+      source.expenses_count++
       const sources = [ ...state.sources ]
       sources[index] = source
   
@@ -113,15 +147,17 @@ export function MainView({ }) {
         modal: false,
         sources,
       }))
-    }).catch(err => {
+    })
+    .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")
       }
     })
+    .finally(() => setState(prev => ({ ...prev, loading: false, })))
   }
 
-  function update(index, index2) {
+  function update(usource, index2) {
     const expense = { ...state.editing }
 
     if (expense.amount === null || isNaN(expense.amount)) {
@@ -131,6 +167,11 @@ export function MainView({ }) {
 
     expense.amount = +expense.amount
 
+    setState(prev => ({
+      ...prev,
+      loading: true,
+    }))
+
     axios.put(
       `${api_url}/expenses/${expense.id}`,
       expense,
@@ -139,57 +180,70 @@ export function MainView({ }) {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
-    ).then(res => {
-      const expenses = [ ...state.sources[index].expenses ]
+    )
+    .then(res => {
+      const expenses = [ ...usource.expenses ]
       expenses[index2] = res.data
-      const source = { ...state.sources[index], expenses }
+      const source = { ...usource, expenses }
       const sources = [ ...state.sources ]
-      sources[index] = source
+      sources[sources.indexOf(usource)] = source
   
       setState(prev => ({
         ...prev,
         editing: null,
         sources
       }))
-    }).catch(err => {
+    })
+    .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")
       }
     })
+    .finally(() => setState(prev => ({ ...prev, loading: false, })))
   }
 
-  function destroy(index, index2) {
+  function destroy(dsource, index) {
+    setState(prev => ({
+      ...prev,
+      loading: true,
+    }))
+
     axios.delete(
-      `${api_url}/expenses/${state.sources[index].expenses[index2].id}`,
+      `${api_url}/expenses/${dsource.expenses[index].id}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        params: {
-          source_id: state.sources[index].id,
-        },
       }
-    ).then(() => {
-      const expenses = [ ...state.sources[index].expenses ]
-      expenses.splice(index2, 1)
-      const source = { ...state.sources[index], expenses }
+    )
+    .then(() => {
+      const expenses = [ ...dsource.expenses ]
+      expenses.splice(index, 1)
+      const source = { ...dsource, expenses }
       const sources = [ ...state.sources ]
-      sources[index] = source
+      sources[sources.indexOf(dsource)] = source
   
       setState(prev => ({
         ...prev,
         sources
       }))
-    }).catch(err => {
+    })
+    .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")
       }
     })
+    .finally(() => setState(prev => ({ ...prev, loading: false, })))
   }
 
   useEffect(() => {
+    if (localStorage.getItem("token") === null) {
+      navigate("/login")
+      return
+    }
+
     load()
   }, [])
 
@@ -198,14 +252,15 @@ export function MainView({ }) {
       <div className="expenses-title">
         <h1>expenses</h1>
         <button onClick={openModal}>add expense</button>
+        <button onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"} mode</button>
         <button onClick={logout}>logout</button>
       </div>
       <div className={`expenses-modal ${state.modal ? "show" : ""}`} onClick={closeModal}>
         <div className="expenses-modal-form" onClick={e => e.stopPropagation()}>
           <p>source</p>
-          <select value={state.expense?.source_id ?? ""} onChange={e => editExpense("expense", "source_id", +e.target.value)}>
+          <select value={state.expense?.source_id ?? ""} onChange={e => selectSource(+e.target.value)}>
             <option value="">select a source</option>
-            {state.sources.map(source => <option key={`option${source.id}`} value={source.id}>{source.name}</option>)}
+            {state.sources.map(source => <option value={source.id}>{source.name}</option>)}
           </select>
           <p>date</p>
           <input type="date" value={state.expense?.date ?? ""} onChange={e => editExpense("expense", "date", e.target.value)} />
@@ -218,72 +273,59 @@ export function MainView({ }) {
         </div>
       </div>
       {state.sources.filter(source => source.expenses.length > 0).length > 0 ? <div className="expenses-container">
-        {state.sources.filter(source => source.expenses.length > 0).map((source, index) => <div key={`source${source.id}`}>
-          <table border={1}>
-            <thead>
-              <tr>
-                <th colSpan={4}>{source.name}</th>
-              </tr>
-              <tr>
-                <th>date</th>
-                <th>amount</th>
-                <th>description</th>
-                <th>action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {source.expenses.map((expense, index2) => <tr key={`expense${expense.id}`}>
-                {state.editing === null || state.editing?.id !== expense.id ?
-                  <>
-                    <td>
-                      {expense.date}
-                    </td>
-                    <td>
-                      ${expense.amount.toFixed(2)}
-                    </td>
-                    <td>
-                        {expense.description ?? "-"}
-                    </td>
-                    <td>
-                      <button onClick={() => setState(prev => ({ ...prev, editing: { ...expense, source_id: source.id } }))}>✎</button>
-                      <button onClick={() => destroy(index, index2)}>⌫</button>
-                    </td>
-                  </> :
-                  state.editing && <>
-                    <td>
-                      <input type="date" value={state.editing?.date} onChange={e => editExpense("editing", "date", e.target.value)} />
-                    </td>
-                    <td>
-                      <input type="number" min={0.01} step={0.01} placeholder={"0.01"} value={state.editing?.amount} onChange={e => editExpense("editing", "amount", e.target.value)} />
-                    </td>
-                    <td>
-                        <textarea rows={1} value={state.editing?.description ?? ""} onChange={e => editExpense("editing", "description", e.target.value)} ></textarea>
-                    </td>
-                    <td>
-                      <button onClick={() => update(index, index2)}>✓</button>
-                      <button onClick={() => setState(prev => ({ ...prev, editing: null }))}>x</button>
-                    </td>
-                  </>
-                }
-              </tr>)}
-            </tbody>
-            <tfoot>
-              <tr>
-                <th>
-                  total
-                </th>
-                <td colSpan={3}>
-                  ${source.expenses.reduce((a, b) => a + b.amount, 0).toFixed(2)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>)}
+        <table border={1}>
+          <thead>
+            <tr>
+              {state.sources.filter(source => source.expenses.length > 0).map(source => <th colSpan={state.simple ? 1 : 4}>{source.name}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0)).fill(null).map((_, index) => <tr>
+              {state.sources.filter(source => source.expenses.length > 0).map(source => state.simple ? <td>
+                {formatNumber(source.expenses?.[index]?.amount?.toFixed(2) ?? "-", "$")}
+              </td> :
+              (source.expenses?.[index] ?
+                (state.editing === null || state.editing?.id !== source.expenses[index].id ? <>
+                  <td>{source.expenses[index].date ?? "-"}</td>
+                  <td>{formatNumber(source.expenses[index].amount.toFixed(2) ?? "-", "$")}</td>
+                  <td>{source.expenses[index].description ?? "-"}</td>
+                  <td>
+                    <button onClick={() => setState(prev => ({ ...prev, editing: { ...source.expenses[index], source_id: source.id } }))}>✎</button>
+                    <button onClick={() => destroy(source, index)}>⌫</button>
+                  </td>
+                </> : <>
+                  <td>
+                    <input type="date" value={state.editing?.date} onChange={e => editExpense("editing", "date", e.target.value)} />
+                  </td>
+                  <td>
+                    <input type="number" min={0.01} step={0.01} placeholder={"0.01"} value={state.editing?.amount ?? ""} onChange={e => editExpense("editing", "amount", e.target.value)} />
+                  </td>
+                  <td>
+                      <textarea rows={1} value={state.editing?.description ?? ""} onChange={e => editExpense("editing", "description", e.target.value)} ></textarea>
+                  </td>
+                  <td>
+                    <button onClick={() => update(source, index)}>✓</button>
+                    <button onClick={() => setState(prev => ({ ...prev, editing: null }))}>x</button>
+                  </td>
+                </>
+              ) : <>
+                {Array(4).fill(null).map((_, i) => <td>-</td>)}
+              </>))}
+            </tr>)}
+          </tbody>
+          <tfoot>
+            <tr>
+              {state.sources.filter(source => source.expenses.length > 0).map(source => <td colSpan={state.simple ? 1 : 4}>
+                ${formatNumber(source.expenses.reduce((a, b) => a + b.amount, 0).toFixed(2))}
+              </td>)}
+            </tr>
+          </tfoot>
+        </table>
       </div> :
       <div className="expenses-container">
         <h2>no expenses recorded</h2>
       </div>}
-      total: ${state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0).toFixed(2)}
+      total: {formatNumber(state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0).toFixed(2), "$")}
     </div> :
     <div className="expenses-loading">loading</div>
   )
