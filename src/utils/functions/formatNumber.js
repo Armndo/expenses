@@ -1,10 +1,10 @@
-export function formatNumber(number, prefix = "", errorString = "-") {
+export function formatNumber(number, prefix = null, errorString = "-") {
   if (isNaN(number)) {
     return errorString
   }
 
   if (number < 1000) {
-    return prefix + number
+    return prefix === null ? +number : prefix + number
   }
 
   const sign = number < 0
@@ -14,7 +14,7 @@ export function formatNumber(number, prefix = "", errorString = "-") {
     number = number.substr(1)
 
   let i = number.length - 1
-  let point = number.indexOf(".")
+  const point = number.indexOf(".")
   let res = ""
 
   if (point > -1) {
@@ -43,5 +43,5 @@ export function formatNumber(number, prefix = "", errorString = "-") {
   if (sign)
     res = "-" + res
 
-  return prefix + res
+  return prefix === null ? +res : prefix + res
 }

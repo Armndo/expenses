@@ -1,6 +1,6 @@
 import { formatNumber } from "./formatNumber"
 
-export function autoRange(number, decimals = 2, errorString = "-") {
+export function autoRange(number, decimals = 2, direct = true, errorString = "-") {
   if(isNaN(number)) {
     return errorString
   }
@@ -18,5 +18,5 @@ export function autoRange(number, decimals = 2, errorString = "-") {
     suffix = "K"
   }
 
-  return formatNumber(res.toFixed(decimals)) + suffix
+  return direct ? formatNumber(res.toFixed(decimals)) + suffix : [formatNumber(res.toFixed(decimals)), suffix]
 }
