@@ -87,6 +87,7 @@ export function MainView({ }) {
         date: standardDate(),
         amount: null,
         description: null,
+        instalments: null,
         source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
       },
     }))
@@ -268,6 +269,8 @@ export function MainView({ }) {
           <input type="number" min={0.01} step={0.01} placeholder={"0.01"} value={state.expense?.amount ?? ""} onChange={e => editExpense("expense", "amount", e.target.value)} />
           <p>description</p>
           <textarea type="text" rows={4} value={state.expense?.description ?? ""} onChange={e => editExpense("expense", "description", e.target.value)} />
+          <p>instalments</p>
+          <input type="number" min={0} step={1} max={36} placeholder={"0"} value={state.expense?.instalments ?? ""} onChange={e => editExpense("expense", "instalments", e.target.value)} />
           <p></p>
           <button onClick={() => store(state.sources.indexOf(state.sources.find(source => state.expense.source_id === source.id)), "expense")}>save</button>
         </div>
