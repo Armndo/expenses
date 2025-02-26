@@ -103,7 +103,7 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
-      total: {formatNumber(state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0).toFixed(2), "$")}
+      total: {formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}
     </div> :
     <div className="expenses-loading">loading</div>
   )

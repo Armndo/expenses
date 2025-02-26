@@ -17,7 +17,7 @@ export function ExpensesModal({ state, setState }) {
   }
 
   function store(index, target) {
-    const expense = { ...state[target] }
+    const expense = { ...state.expense }
 
     if (expense.amount === null || isNaN(expense.amount)) {
       alert("Monto en formato incorrecto.")
@@ -41,10 +41,10 @@ export function ExpensesModal({ state, setState }) {
       }
     )
     .then(res => {
-      const expenses = [ ...state.sources[index].expenses ]
+      const expenses = [ ...state.sources[index][target] ]
       expenses.push(res.data)
-      const source = { ...state.sources[index], expenses }
-      source.expenses_count++
+      const source = { ...state.sources[index], [target]: expenses }
+      source[`${target}_count`]++
       const sources = [ ...state.sources ]
       sources[index] = source
   
@@ -98,9 +98,9 @@ export function ExpensesModal({ state, setState }) {
         <p>description</p>
         <textarea type="text" rows={4} value={state.expense?.description ?? ""} onChange={e => editExpense("expense", "description", e.target.value)} />
         <p>instalments</p>
-        <input type="number" min={0} step={1} max={36} placeholder={"0"} value={state.expense?.instalments ?? ""} onChange={e => editExpense("expense", "instalments", e.target.value)} />
+        <input type="number" min={2} step={1} max={36} placeholder={"3"} value={state.expense?.instalments ?? ""} onChange={e => editExpense("expense", "instalments", e.target.value)} />
         <p></p>
-        <button onClick={() => store(state.sources.indexOf(state.sources.find(source => state.expense.source_id === source.id)), "expense")}>save</button>
+        <button onClick={() => store(state.sources.indexOf(state.sources.find(source => state.expense.source_id === source.id)), state.expense?.instalments ? "instalments" : "expenses")}>save</button>
       </div>
     </div>
   )
