@@ -12,7 +12,6 @@ export function ExpensesTable({ state, setState }) {
           </tr>
         </thead>
         <tbody>
-          { console.log(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0), Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0))) }
           {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0)).fill(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0)).map((offset, index) => 
             <ExpenseItem
               index={index}

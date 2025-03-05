@@ -15,20 +15,26 @@ export function MainView({ }) {
     expense: null,
     simple: localStorage.getItem("simple") === "true",
     lastSource: +localStorage.getItem("lastSource"),
+    date: null,
   })
 
   const navigate = useNavigate()
 
-  function load() {
+  function load(date = null) {
+    setState(prev => ({ ...prev, loading: true }))
+
     axios.get(
       `${api_url}/expenses`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
+        params: {
+          date,
+        }
       }
     )
-    .then(res => setState(prev => ({ ...prev, sources: res.data })))
+    .then(res => setState(prev => ({ ...prev, date, sources: res.data })))
     .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")
@@ -36,6 +42,46 @@ export function MainView({ }) {
       }
     })
     .finally(() => setState(prev => ({ ...prev, loading: false })))
+  }
+
+  function currentDate(date = null) {
+    const d = date ? new Date(date) : new Date()
+    d.setMinutes(d.getMinutes() - (new Date()).getTimezoneOffset())
+
+    const months = [
+      "January",
+      "Febrary",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ]
+
+    return `${months[d.getMonth()]} ${d.getFullYear()} `
+  }
+
+  function changeDate(next = false) {
+    const date = state.date ? new Date(state.date) : new Date();
+
+    if (state.date === null) {
+      date.setMinutes(date.getMinutes() - (new Date()).getTimezoneOffset())
+    }
+
+    date.setDate(1)
+
+    if (next) {
+      date.setMonth(date.getMonth() + 1)
+    } else {
+      date.setMonth(date.getMonth() - 1)
+    }
+
+    load(date.toISOString().split("T")[0])
   }
 
   function logout() {
@@ -90,9 +136,11 @@ export function MainView({ }) {
   return (!state.loading ?
     <div>
       <div className="expenses-title">
-        <h1>expenses</h1>
+        <h1>expenses {currentDate(state.date)}</h1>
         <button onClick={openModal}>add expense</button>
         <button onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"} mode</button>
+        <button onClick={() => changeDate()} disabled={state.editing}>previous month</button>
+        <button onClick={() => changeDate(true)} disabled={state.editing}>next month</button>
         <button onClick={logout}>logout</button>
       </div>
       <ExpensesModal
