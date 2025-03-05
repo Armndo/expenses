@@ -16,7 +16,9 @@ function monthlyAmount(instalment) {
 
 function ShownItem({ state, setState, item, index, source, offset = 0, target = "expenses", className = null }) {
   function destroy(dsource, index) {
-    console.log(index);
+    if (!confirm("Delete?")) {
+      return
+    }
 
     setState(prev => ({
       ...prev,
@@ -104,8 +106,6 @@ function EditItem({ state, setState, source, index, offset = 0, target = "expens
     )
     .then(res => {
       const expenses = [ ...usource[target] ]
-      console.log(expenses);
-      
       expenses[index2 - offset] = res.data
       const source = { ...usource, [target]: expenses }
       const sources = [ ...state.sources ]
