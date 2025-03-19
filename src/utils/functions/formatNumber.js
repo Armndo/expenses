@@ -4,7 +4,7 @@ export function formatNumber(number, prefix = null, errorString = "-") {
   }
 
   if (number < 1000) {
-    return prefix === null ? +number : prefix + number
+    return prefix === null ? `${number}` : prefix + number
   }
 
   const sign = number < 0
@@ -43,5 +43,5 @@ export function formatNumber(number, prefix = null, errorString = "-") {
   if (sign)
     res = "-" + res
 
-  return prefix === null ? +res : prefix + res
+  return prefix === null ? res : prefix + res
 }
