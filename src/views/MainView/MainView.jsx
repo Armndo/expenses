@@ -73,7 +73,7 @@ export function MainView({ }) {
       date.setMinutes(date.getMinutes() - (new Date()).getTimezoneOffset())
     }
 
-    date.setDate(1)
+    date.setDate(2)
 
     if (next) {
       date.setMonth(date.getMonth() + 1)
@@ -101,7 +101,7 @@ export function MainView({ }) {
     })
   }
 
-  function openModal() {
+  function openModal(expense = {}) {
     setState(prev => ({
       ...prev,
       modal: true,
@@ -111,6 +111,7 @@ export function MainView({ }) {
         description: null,
         instalments: null,
         source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
+        ...expense,
       },
     }))
   }
@@ -135,9 +136,10 @@ export function MainView({ }) {
 
   return (!state.loading ?
     <div>
+      <h1>{currentDate(state.date)}</h1>
       <div className="expenses-title">
-        <h1>expenses {currentDate(state.date)}</h1>
-        <button onClick={openModal}>add expense</button>
+        <h2>expenses {formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}</h2>
+        <button onClick={() => openModal()}>add expense</button>
         <button onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"} mode</button>
         <button onClick={() => changeDate()} disabled={state.editing}>previous month</button>
         <button onClick={() => changeDate(true)} disabled={state.editing}>next month</button>
@@ -150,8 +152,19 @@ export function MainView({ }) {
       <ExpensesTable
         state={state}
         setState={setState}
+        openModal={openModal}
       />
-      total: {formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}
+      <div>
+        <h2>incomes {formatNumber((state.sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0)).toFixed(2), "$")}</h2>
+        {state.sources.map(source => source.incomes_count > 0 && <>
+          <h3>{source.name}</h3>
+          <ul>
+            {source.incomes.map(income => <li>
+              {income.date} - {formatNumber(income.amount.toFixed(2), "$")} - {income.description}
+            </li>)}
+          </ul>
+        </>)}
+      </div>
     </div> :
     <div className="expenses-loading">loading</div>
   )

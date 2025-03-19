@@ -1,7 +1,7 @@
 import { ExpenseItem } from "@/components"
 import { formatNumber } from "@/utils/functions"
 
-export function ExpensesTable({ state, setState }) {
+export function ExpensesTable({ state, setState, openModal }) {
   return (
     state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).length > 0 ?
     <div className="expenses-container">
@@ -18,6 +18,7 @@ export function ExpensesTable({ state, setState }) {
               offset={offset}
               state={state}
               setState={setState}
+              openModal={openModal}
             />
           )}
         </tbody>
