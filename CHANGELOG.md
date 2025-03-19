@@ -1,3 +1,15 @@
+## 0.2.0 (2025-03-19)
+
+### Feat
+
+- implemented incomes WIP, refactor expenses
+- implemented app.yaml and .gcloudignore to serve in google app engine
+- **expenseitem**: added confirm message before destroying expense (to prevent deletions in mobile)
+- **mainview**: implemented change of date for expenses
+- implemented ExpensesItem component, reduced ExpensesTable component
+- **mainview**: componentization of expenses table and modal
+- **mainview**: implementing fields for instalment expenses
+
 ## 0.1.0 (2025-02-24)
 
 ### Feat
