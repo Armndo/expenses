@@ -1,0 +1,25 @@
+runtime: nodejs20
+service: expenses
+
+handlers:
+# Serve all static files with url ending with a file extension
+# - url: /(.*\..+)$
+#   static_files: ./\1
+#   upload: ./(.*\..+)$
+# Catch all handler to index.html
+- url: /assets
+  secure: always
+  static_dir: dist/assets
+
+- url: /(.*\.(gif|media|json|ico|eot|ttf|woff|woff2|png|jpg|css|js|svg))$
+  secure: always
+  static_files: dist/\1
+  upload: dist/.*\.(gif|media|json|ico|eot|ttf|woff|woff2|png|jpg|css|js|svg)$
+- url: .*
+  secure: always
+  static_files: dist/index.html
+  upload: dist/index.html
+
+automatic_scaling:
+  max_instances: 1
+  min_instances: 0

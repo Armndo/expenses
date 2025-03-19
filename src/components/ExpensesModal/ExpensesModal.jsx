@@ -16,7 +16,7 @@ export function ExpensesModal({ state, setState }) {
     }))
   }
 
-  function store(index, target) {
+  function store() {
     const expense = { ...state.expense }
 
     if (expense.amount === null || isNaN(expense.amount)) {
@@ -40,27 +40,46 @@ export function ExpensesModal({ state, setState }) {
         },
       }
     )
-    .then(res => {
-      const expenses = [ ...state.sources[index][target] ]
-      expenses.push(res.data)
-      const source = { ...state.sources[index], [target]: expenses }
-      source[`${target}_count`]++
-      const sources = [ ...state.sources ]
-      sources[index] = source
-  
-      setState(prev => ({
-        ...prev,
-        [target]: null,
-        sources,
-      }))
-    })
+    .then(() => window.location.reload())
     .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")
       }
     })
-    .finally(() => setState(prev => ({ ...prev, modal: false, loading: false, })))
+  }
+
+  function update() {
+    const expense = { ...state.expense }
+
+    if (expense.amount === null || isNaN(expense.amount)) {
+      alert("Monto en formato incorrecto.")
+      return
+    }
+
+    expense.amount = +expense.amount
+
+    setState(prev => ({
+      ...prev,
+      loading: true,
+    }))
+
+    axios.put(
+      `${api_url}/expenses/${expense.id}`,
+      expense,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    )
+    .then(() => window.location.reload())
+    .catch(err => {
+      if (err?.status === 401) {
+        localStorage.removeItem("token")
+        navigate("/login")
+      }
+    })
   }
 
   function closeModal() {
@@ -100,7 +119,7 @@ export function ExpensesModal({ state, setState }) {
         <p>instalments</p>
         <input type="number" min={2} step={1} max={36} placeholder={"3"} value={state.expense?.instalments ?? ""} onChange={e => editExpense("expense", "instalments", e.target.value)} />
         <p></p>
-        <button onClick={() => store(state.sources.indexOf(state.sources.find(source => state.expense.source_id === source.id)), state.expense?.instalments ? "instalments" : "expenses")}>save</button>
+        <button onClick={() => state.expense?.id ? update() : store()}>{state.expense?.id ? "update" : "save"}</button>
       </div>
     </div>
   )
