@@ -50,7 +50,7 @@ function ShownItem({ setState, item, index, source, offset = 0, target = "expens
       <td className={className}>{formatNumber(monthlyAmount(item) ?? "-", "$")}</td>
       <td className={className}>{item.description ?? "-"}</td>
       <td className={className}>
-        <button onClick={() => openModal(item)}>✎</button>
+        <button onClick={() => openModal({ ...item, source_id: source.id })}>✎</button>
         <button onClick={() => destroy(source, index)}>⌫</button>
       </td>
     </>
