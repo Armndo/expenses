@@ -2,6 +2,8 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { api_url } from "@/env"
 import { useNavigate } from "react-router-dom"
+import "./LoginView.css"
+import { Button } from "@mui/material"
 
 export function LoginView({}) {
   const [state, setState] = useState({
@@ -61,9 +63,10 @@ export function LoginView({}) {
         <br /> 
         <input type="password" value={state.password} onChange={e => setState(prev => ({...prev, password: e.target.value}))} />
         <br />
-        <button type="submit">log in</button> 
+        <button type="submit">log in</button>
+        <Button variant="contained">Log in</Button>
       </form>
     </div> :
-    <div>loading</div>
+    <div className="login-loading">loading</div>
   )
 }
