@@ -15,7 +15,7 @@ export function ExpensesTable({ state, setState, openModal }) {
                 align="center"
                 sx={{ zIndex: 1 }}
               >
-                <div  >
+                <div>
                   <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
                   <Tooltip title="De contado">
                     <Chip size="small" sx={{ background: "transparent", border: "1px solid #c0c0c0" }} label={formatNumber(source.expenses.reduce((a, b) => a + b.amount, 0).toFixed(2), "$")} />
