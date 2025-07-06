@@ -144,11 +144,11 @@ export function MainView({ }) {
       <Card sx={{ margin: "auto", mt: "1rem", maxHeight: "calc(100vh - 2rem)", maxWidth: "90vw", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
-          <Button variant="contained" onClick={() => openModal()}>Add</Button>
-          <Button variant="contained" onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
-          <Button variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
-          <Button variant="contained" onClick={() => changeDate(true)} disabled={state.editing}>next</Button>
-          <Button variant="contained" onClick={logout}>Logout</Button>
+          <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Add</Button>
+          <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
+          <Button size="small" color="secondary" variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
+          <Button size="small" color="secondary" variant="contained" onClick={() => changeDate(true)} disabled={state.editing}>next</Button>
+          <Button size="small" color="error" variant="contained" onClick={logout}>Logout</Button>
         </CardActions>
         <CardContent sx={{ width: "calc(100% - 2rem)", overflow: "scroll", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
           <ExpensesTable

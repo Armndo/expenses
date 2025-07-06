@@ -51,9 +51,9 @@ function ShownItem({ setState, item, index, source, offset = 0, target = "expens
       <TableCell className={className}>{formatNumber(monthlyAmount(item) ?? "-", "$")}</TableCell>
       <TableCell className={className}>{item.description ?? "-"}</TableCell>
       <TableCell className={className}>
-        <ButtonGroup>
-          <Button variant="contained" onClick={() => openModal({ ...item, source_id: source.id })}>✎</Button>
-          <Button variant="contained" onClick={() => destroy(source, index)}>⌫</Button>
+        <ButtonGroup size="small">
+          <Button variant="contained" color="warning" onClick={() => openModal({ ...item, source_id: source.id })}>✎</Button>
+          <Button variant="contained" color="error" onClick={() => destroy(source, index)}>⌫</Button>
         </ButtonGroup>
       </TableCell>
     </>
