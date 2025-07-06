@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { api_url } from "@/env"
 import { useNavigate } from "react-router-dom"
 import "./LoginView.css"
-import { Button } from "@mui/material"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, TextField } from "@mui/material"
 
 export function LoginView({}) {
   const [state, setState] = useState({
@@ -52,21 +52,35 @@ export function LoginView({}) {
   }
 
   return (!state.loading ?
-    <div>
-      <h1>login</h1>
-      <form onSubmit={login}>
-        <span>email</span>
-        <br /> 
-        <input type="text" value={state.email} onChange={e => setState(prev => ({...prev, email: e.target.value}))} />
-        <br /> 
-        <span>password</span>
-        <br /> 
-        <input type="password" value={state.password} onChange={e => setState(prev => ({...prev, password: e.target.value}))} />
-        <br />
-        <button type="submit">log in</button>
-        <Button variant="contained">Log in</Button>
-      </form>
-    </div> :
+    <Box sx={{ width: "100vw", height: "100vh" }}>
+      <Card sx={{ width: "50%", maxWidth: "40rem", margin: "auto", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "unset", borderRadius: "1rem" }} elevation={5} >
+        <CardHeader title="Login" />
+        <CardContent>
+          <form onSubmit={login} id="login-form">
+            <TextField
+              sx={{ width: "100%", mb: "1rem" }}
+              required
+              label="Email"
+              value={state.email}
+              onChange={e => setState(prev => ({...prev, email: e.target.value}))}
+            />
+            <TextField
+              sx={{ width: "100%" }}
+              required
+              type="password"
+              label="Password"
+              value={state.password}
+              onChange={e => setState(prev => ({...prev, password: e.target.value}))}
+            />
+          </form>
+        </CardContent>
+        <CardActions sx={{ p: "1rem" }}>
+          <Button variant="outlined" size="large" type="submit" form="login-form" >
+            Send
+          </Button>
+        </CardActions>
+      </Card>
+    </Box> :
     <div className="login-loading">loading</div>
   )
 }

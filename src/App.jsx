@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import { LoginView, MainView, NotFoundView } from "@/views"
 import { createTheme, ThemeProvider } from "@mui/material"
+import "./App.css"
 
 function App({ children }) {
   const router = createBrowserRouter([
