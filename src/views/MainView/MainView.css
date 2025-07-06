@@ -25,6 +25,8 @@ td.instalment {
   left: 0;
   display: none;
   cursor: not-allowed;
+  z-index: 2;
+  backdrop-filter: blur(2px);
 }
 
 .expenses-modal.show {

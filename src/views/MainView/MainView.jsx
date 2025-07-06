@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { formatNumber, standardDate } from "@/utils/functions"
 import { ExpensesModal, ExpensesTable } from "@/components"
 import "./MainView.css"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Paper } from "@mui/material"
 
 export function MainView({ }) {
   const [state, setState] = useState({
@@ -135,37 +136,43 @@ export function MainView({ }) {
   }, [])
 
   return (!state.loading ?
-    <div>
-      <h1>{currentDate(state.date)}</h1>
-      <div className="expenses-title">
-        <h2>expenses {formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}</h2>
-        <button onClick={() => openModal()}>add expense</button>
-        <button onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"} mode</button>
-        <button onClick={() => changeDate()} disabled={state.editing}>previous month</button>
-        <button onClick={() => changeDate(true)} disabled={state.editing}>next month</button>
-        <button onClick={logout}>logout</button>
-      </div>
+    <Box sx={{ width: "100vw", height: "calc(100vh - 1rem)" }}>
       <ExpensesModal
         state={state}
         setState={setState}
       />
-      <ExpensesTable
-        state={state}
-        setState={setState}
-        openModal={openModal}
-      />
-      <div>
-        <h2>incomes {formatNumber((state.sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0)).toFixed(2), "$")}</h2>
-        {state.sources.map(source => source.incomes_count > 0 && <>
-          <h3>{source.name}</h3>
-          <ul>
-            {source.incomes.map(income => <li>
-              {income.date} - {formatNumber(income.amount.toFixed(2), "$")} - {income.description}
-            </li>)}
-          </ul>
-        </>)}
-      </div>
-    </div> :
+      <Card sx={{ margin: "auto", mt: "1rem", maxHeight: "calc(100vh - 2rem)", maxWidth: "90vw", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
+        <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
+        <CardActions sx={{ p: "1rem", pt: 0 }}>
+          <Button variant="contained" onClick={() => openModal()}>Add</Button>
+          <Button variant="contained" onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
+          <Button variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
+          <Button variant="contained" onClick={() => changeDate(true)} disabled={state.editing}>next</Button>
+          <Button variant="contained" onClick={logout}>Logout</Button>
+        </CardActions>
+        <CardContent sx={{ width: "calc(100% - 2rem)", minHeight: "60vh", maxHeight: "70vh", overflow: "scroll", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
+          <ExpensesTable
+            state={state}
+            setState={setState}
+            openModal={openModal}
+          />
+        </CardContent>
+        {/* <CardHeader subheader={`Incomes: ${formatNumber((state.sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0)).toFixed(2), "$")}`} /> */}
+        {/* <CardActions sx={{ p: "1rem", pt: 0 }}>
+          <Button variant="contained" onClick={() => null}>Add</Button>
+        </CardActions>
+        <CardContent>
+          {state.sources.map(source => source.incomes_count > 0 && <>
+            <h3>{source.name}</h3>
+            <ul>
+              {source.incomes.map(income => <li>
+                {income.date} - {formatNumber(income.amount.toFixed(2), "$")} - {income.description}
+              </li>)}
+            </ul>
+          </>)}
+        </CardContent> */}
+      </Card>
+    </Box> :
     <div className="expenses-loading">loading</div>
   )
 }
