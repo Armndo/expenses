@@ -13,7 +13,7 @@
 }
 
 td.instalment {
-  background: rgb(132, 128, 255);
+  background: #bdbaff;
 }
 
 .expenses-modal {
@@ -64,6 +64,6 @@ textarea {
 }
 
 tfoot td {
-  background: #e0e0e0;
+  background: #f0f0f0;
   text-align: center;
 }

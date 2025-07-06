@@ -150,7 +150,7 @@ export function MainView({ }) {
           <Button variant="contained" onClick={() => changeDate(true)} disabled={state.editing}>next</Button>
           <Button variant="contained" onClick={logout}>Logout</Button>
         </CardActions>
-        <CardContent sx={{ width: "calc(100% - 2rem)", minHeight: "60vh", maxHeight: "70vh", overflow: "scroll", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
+        <CardContent sx={{ width: "calc(100% - 2rem)", overflow: "scroll", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
           <ExpensesTable
             state={state}
             setState={setState}
