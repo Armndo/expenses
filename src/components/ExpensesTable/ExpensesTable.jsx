@@ -5,7 +5,7 @@ import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
 export function ExpensesTable({ state, setState, openModal }) {
   return (
     state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).length > 0 ?
-    <TableContainer sx={{ maxHeight: "80vh", overflow: "auto" }}>
+    <TableContainer className="expenses-table-container" sx={{ maxHeight: "calc(100vh - 12rem)", overflow: "auto" }}>
       <Table size="small" stickyHeader className="expenses_table">
         <TableHead>
           <TableRow>

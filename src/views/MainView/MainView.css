@@ -77,24 +77,28 @@ td {
   text-align: center !important;
 }
 
-td:nth-child(4n - 1) {
-  min-width: 10rem !important;
-  /* text-align: justify !important; */
-  /* background: red; */
+@media only screen and (max-width: 767px) {
+  th > div {
+    width: calc(100vw - 6rem) !important;
+  }
 }
 
-td:nth-child(4n - 1).simple {
-  min-width: unset !important;
-  /* text-align: center !important; */
-  /* background: unset; */
+@media only screen and (max-width: 600px) and (orientation: portrait) {
+  div.expenses-card {
+    max-height: calc(100vh - 6rem) !important;
+  }
+
+  .expenses-table-container {
+    max-height: calc(100vh - 16rem) !important;
+  }
 }
 
-td:nth-child(3n).simple {
-  min-width: 10rem !important;
-  /* text-align: justify !important; */
-  /* background: blue; */
-}
+@media only screen and (max-height: 600px) and (orientation: landscape) {
+  div.expenses-card {
+    max-height: calc(100vh - 6rem) !important;
+  }
 
-td.simple {
-  /* font-size: .75rem; */
+  .expenses-table-container {
+    max-height: calc(100vh - 16rem) !important;
+  }
 }

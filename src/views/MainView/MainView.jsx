@@ -147,7 +147,7 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
-      <Card sx={{ margin: "auto", mt: "1rem", maxHeight: "calc(100vh - 2rem)", maxWidth: "90vw", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
+      <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Add</Button>
