@@ -73,7 +73,28 @@ textarea {
   resize: none;
 }
 
-tfoot td {
-  background: #f0f0f0;
-  text-align: center;
+td {
+  text-align: center !important;
+}
+
+td:nth-child(4n - 1) {
+  min-width: 10rem !important;
+  /* text-align: justify !important; */
+  /* background: red; */
+}
+
+td:nth-child(4n - 1).simple {
+  min-width: unset !important;
+  /* text-align: center !important; */
+  /* background: unset; */
+}
+
+td:nth-child(3n).simple {
+  min-width: 10rem !important;
+  /* text-align: justify !important; */
+  /* background: blue; */
+}
+
+td.simple {
+  /* font-size: .75rem; */
 }

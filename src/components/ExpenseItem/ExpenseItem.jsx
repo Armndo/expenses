@@ -15,7 +15,7 @@ function monthlyAmount(instalment) {
   return (instalment.amount / instalment.instalments).toFixed(2)
 }
 
-function ShownItem({ setState, item, index, source, offset = 0, target = "expenses", className = null, openModal }) {
+function ShownItem({ setState, item, index, source, offset = 0, target = "expenses", className = null, openModal = () => null }) {
   function destroy(dsource, index) {
     if (!confirm("Delete?")) {
       return
@@ -60,14 +60,27 @@ function ShownItem({ setState, item, index, source, offset = 0, target = "expens
   )
 }
 
+function SimpleItem({ className, item }) {
+  return (
+    <>
+      <TableCell className={className}>{formatDate(item?.date)}</TableCell>
+      <TableCell className={className}>{formatNumber(monthlyAmount(item) ?? "-", "$")}</TableCell>
+      <TableCell className={className}>{item?.description ?? "-"}</TableCell>
+    </>
+  )
+}
+
+let aux = null
+
 export function ExpenseItem({ index, offset, state, setState, openModal }) {
   return (
     <TableRow>
       {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(
         source => state.simple ?
-          <TableCell className={index >= offset ? "instalment" : ""}>
-            {formatNumber(source.expenses?.[index]?.amount?.toFixed(2) ?? monthlyAmount(source.instalments?.[index - offset]) ?? "-", "$")}
-          </TableCell> :
+          // <TableCell className={`simple ${index >= offset ? "instalment" : ""}`}>
+          //   {aux = (source.expenses?.[index]?.description ?? source.instalments?.[index - offset]?.description)}{aux ? " - " : ""}{formatNumber(source.expenses?.[index]?.amount?.toFixed(2) ?? monthlyAmount(source.instalments?.[index - offset]) ?? "-", "$")}
+          // </TableCell> :
+          <SimpleItem className={`simple ${index >= offset ? "instalment" : ""}`} item={source.expenses?.[index] || source.instalments?.[index - offset]} /> :
           (
             source.expenses?.[index] ?
               <ShownItem state={state} index={index} setState={setState} source={source} item={source.expenses[index]} openModal={openModal} />

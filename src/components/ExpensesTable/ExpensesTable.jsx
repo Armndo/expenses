@@ -6,12 +6,12 @@ export function ExpensesTable({ state, setState, openModal }) {
   return (
     state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).length > 0 ?
     <TableContainer sx={{ maxHeight: "80vh", overflow: "auto" }}>
-      <Table size="small" stickyHeader>
+      <Table size="small" stickyHeader className="expenses_table">
         <TableHead>
           <TableRow>
             {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => (
               <TableCell
-                colSpan={state.simple ? 1 : 4}
+                colSpan={state.simple ? 3 : 4}
                 align="center"
                 sx={{ zIndex: 1 }}
               >
