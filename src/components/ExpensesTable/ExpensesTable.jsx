@@ -1,17 +1,39 @@
 import { ExpenseItem } from "@/components"
 import { formatNumber } from "@/utils/functions"
+import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 export function ExpensesTable({ state, setState, openModal }) {
   return (
     state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).length > 0 ?
-    <div className="expenses-container">
-      <table border={1}>
-        <thead>
-          <tr>
-            {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => <th colSpan={state.simple ? 1 : 4}>{source.name}</th>)}
-          </tr>
-        </thead>
-        <tbody>
+    <TableContainer sx={{ maxHeight: "80vh" }}>
+      <Table size="small" stickyHeader>
+        <TableHead>
+          <TableRow>
+            {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => (
+              <TableCell
+                colSpan={state.simple ? 1 : 4}
+                align="center"
+                sx={{ zIndex: 1 }}
+              >
+                <div>
+                  <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
+                  <Tooltip title="De contado">
+                    <Chip size="small" sx={{ background: "transparent", border: "1px solid #c0c0c0" }} label={formatNumber(source.expenses.reduce((a, b) => a + b.amount, 0).toFixed(2), "$")} />
+                  </Tooltip>
+                  {" + "}
+                  <Tooltip title="A meses">
+                    <Chip size="small" sx={{ background: "#bdbaff" }} label={formatNumber(source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0).toFixed(2), "$")} />
+                  </Tooltip>
+                  {" = "}
+                  <Tooltip title="Total">
+                    <Chip size="small" sx={{ background: "#c0c0c0" }} label={formatNumber((source.expenses.reduce((a, b) => a + b.amount, 0) + source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0)).toFixed(2), "$")} />
+                  </Tooltip>
+                </div>
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0)).fill(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0)).map((offset, index) => 
             <ExpenseItem
               index={index}
@@ -21,28 +43,19 @@ export function ExpensesTable({ state, setState, openModal }) {
               openModal={openModal}
             />
           )}
-        </tbody>
-        <tfoot>
-          {state.sources.filter(source => source.expenses.length > 0).length > 0 && <tr>
-            {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => <td colSpan={state.simple ? 1 : 4}>
-              {formatNumber(source.expenses.reduce((a, b) => a + b.amount, 0).toFixed(2), "$")}
-            </td>)}
-          </tr>}
-          {state.sources.filter(source => source.instalments.length > 0).length > 0 && <tr>
-            {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => <td className={!(state.sources.filter(source => source.expenses.length > 0).length > 0 ^ state.sources.filter(source => source.instalments.length > 0).length > 0) ? "instalment" : null} colSpan={state.simple ? 1 : 4}>
-              {formatNumber(source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0).toFixed(2), "$")}
-            </td>)}
-          </tr>}
-          {!(state.sources.filter(source => source.expenses.length > 0).length > 0 ^ state.sources.filter(source => source.instalments.length > 0).length > 0) ? <tr>
-            {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => <td colSpan={state.simple ? 1 : 4}>
-              {formatNumber((source.expenses.reduce((a, b) => a + b.amount, 0) + source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0)).toFixed(2), "$")}
-            </td>)}
-          </tr> : null}
-        </tfoot>
-      </table>
-    </div> :
-    <div className="expenses-container">
-      <h2>no expenses recorded</h2>
-    </div>
+        </TableBody>
+      </Table>
+    </TableContainer> :
+    <TableContainer>
+      <Table>
+        <TableBody>
+          <TableRow>
+            <TableCell>
+              <Typography variant="h6" >No expenses.</Typography>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }

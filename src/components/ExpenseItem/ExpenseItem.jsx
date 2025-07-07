@@ -1,5 +1,6 @@
 import { api_url } from "@/env"
-import { formatNumber } from "@/utils/functions"
+import { formatDate, formatNumber } from "@/utils/functions"
+import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
 import axios from "axios"
 
 function monthlyAmount(instalment) {
@@ -46,35 +47,37 @@ function ShownItem({ setState, item, index, source, offset = 0, target = "expens
 
   return (
     <>
-      <td className={className}>{item.date ?? "-"}</td>
-      <td className={className}>{formatNumber(monthlyAmount(item) ?? "-", "$")}</td>
-      <td className={className}>{item.description ?? "-"}</td>
-      <td className={className}>
-        <button onClick={() => openModal(item)}>✎</button>
-        <button onClick={() => destroy(source, index)}>⌫</button>
-      </td>
+      <TableCell className={className}>{formatDate(item?.date)}</TableCell>
+      <TableCell className={className}>{formatNumber(monthlyAmount(item) ?? "-", "$")}</TableCell>
+      <TableCell className={className}>{item.description ?? "-"}</TableCell>
+      <TableCell className={className}>
+        <ButtonGroup size="small">
+          <Button variant="contained" color="warning" onClick={() => openModal({ ...item, source_id: source.id })}>✎</Button>
+          <Button variant="contained" color="error" onClick={() => destroy(source, index)}>⌫</Button>
+        </ButtonGroup>
+      </TableCell>
     </>
   )
 }
 
 export function ExpenseItem({ index, offset, state, setState, openModal }) {
   return (
-    <tr>
+    <TableRow>
       {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(
         source => state.simple ?
-          <td className={index >= offset ? "instalment" : ""}>
+          <TableCell className={index >= offset ? "instalment" : ""}>
             {formatNumber(source.expenses?.[index]?.amount?.toFixed(2) ?? monthlyAmount(source.instalments?.[index - offset]) ?? "-", "$")}
-          </td> :
+          </TableCell> :
           (
             source.expenses?.[index] ?
               <ShownItem state={state} index={index} setState={setState} source={source} item={source.expenses[index]} openModal={openModal} />
             : source.instalments?.[index - offset] ?
               <ShownItem state={state} index={index} setState={setState} source={source} openModal={openModal} className="instalment" offset={offset} target={"instalments"} item={source.instalments[index - offset]} />
             : <>
-              {Array(4).fill(null).map((_, i) => <td className={index >= offset ? "instalment" : ""}>-</td>)}
+              {Array(4).fill(null).map((_, i) => <TableCell className={index >= offset ? "instalment" : ""}>-</TableCell>)}
             </>
           )
         )}
-    </tr>
+    </TableRow>
   )
 }

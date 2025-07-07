@@ -13,11 +13,11 @@
 }
 
 td.instalment {
-  background: rgb(132, 128, 255);
+  background: #bdbaff;
 }
 
 .expenses-modal {
-  background: rgba(0, 0, 0, .35);
+  background: #ffffff59;
   position: absolute;
   height: 100vh;
   width: 100vw;
@@ -25,6 +25,8 @@ td.instalment {
   left: 0;
   display: none;
   cursor: not-allowed;
+  z-index: 2;
+  backdrop-filter: blur(2px);
 }
 
 .expenses-modal.show {
@@ -32,7 +34,7 @@ td.instalment {
 }
 
 .expenses-modal > div {
-  background: #f0f0f0;
+  /* background: #f0f0f0; */
   padding: 1rem;
   position: absolute;
   left: 50%;
@@ -51,6 +53,16 @@ td.instalment {
 }
 
 .expenses-loading {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  margin-top: -1rem;
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+  background: #ffffff59;
+}
+
+.expenses-loading > div {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -62,6 +74,6 @@ textarea {
 }
 
 tfoot td {
-  background: #e0e0e0;
+  background: #f0f0f0;
   text-align: center;
 }

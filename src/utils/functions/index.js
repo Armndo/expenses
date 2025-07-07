@@ -1,4 +1,5 @@
 export { sleep } from "./sleep"
 export { formatNumber } from "./formatNumber"
+export { formatDate } from "./formatDate"
 export { autoRange } from "./autoRange"
 export { standardDate } from "./standardDate"
