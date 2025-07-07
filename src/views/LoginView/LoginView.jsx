@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { api_url } from "@/env"
 import { useNavigate } from "react-router-dom"
 import "./LoginView.css"
-import { Box, Button, Card, CardActions, CardContent, CardHeader, TextField } from "@mui/material"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, TextField, Typography } from "@mui/material"
 
 export function LoginView({}) {
   const [state, setState] = useState({
@@ -51,7 +51,8 @@ export function LoginView({}) {
     }).finally(() => setState(prev => ({ ...prev, loading: false })))
   }
 
-  return (!state.loading ?
+  return <>
+    {state.loading && <div className="login-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
     <Box sx={{ width: "100vw", height: "100vh" }}>
       <Card sx={{ width: "50%", maxWidth: "40rem", margin: "auto", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "unset", borderRadius: "1rem" }} elevation={5} >
         <CardHeader title="Login" />
@@ -80,7 +81,6 @@ export function LoginView({}) {
           </Button>
         </CardActions>
       </Card>
-    </Box> :
-    <div className="login-loading">loading</div>
-  )
+    </Box>
+  </>
 }

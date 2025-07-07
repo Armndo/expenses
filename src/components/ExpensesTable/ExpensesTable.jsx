@@ -46,8 +46,16 @@ export function ExpensesTable({ state, setState, openModal }) {
         </TableBody>
       </Table>
     </TableContainer> :
-    <div className="expenses-container">
-      <h2>no expenses recorded</h2>
-    </div>
+    <TableContainer>
+      <Table>
+        <TableBody>
+          <TableRow>
+            <TableCell>
+              <Typography variant="h6" >No expenses.</Typography>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }

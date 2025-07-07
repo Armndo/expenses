@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { formatNumber, standardDate } from "@/utils/functions"
 import { ExpensesModal, ExpensesTable } from "@/components"
 import "./MainView.css"
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Paper } from "@mui/material"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 
 export function MainView({ }) {
   const [state, setState] = useState({
@@ -135,7 +135,8 @@ export function MainView({ }) {
     load()
   }, [])
 
-  return (!state.loading ?
+  return <>
+    {state.loading && <div className="expenses-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
     <Box sx={{ width: "100vw", height: "calc(100vh - 1rem)" }}>
       <ExpensesModal
         state={state}
@@ -172,7 +173,6 @@ export function MainView({ }) {
           </>)}
         </CardContent> */}
       </Card>
-    </Box> :
-    <div className="expenses-loading">loading</div>
-  )
+    </Box>
+  </>
 }
