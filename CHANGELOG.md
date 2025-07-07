@@ -1,3 +1,20 @@
+## 0.3.0 (2025-07-06)
+
+### Feat
+
+- **mainview**: added variable to store date of last update/create
+- **loader**: revamoed login loader and mainview loader
+- **expensemodal**: revamped modal and form, improved colors
+- **expresstable**: removed footer, added footer fields as chips
+- **expensetable**: implemented MUI for ExpenseTable and ExpenseItem
+- **mainview**: added card style for expenses table
+- **loginview**: implemented mui login
+- **loginview**: implementing better UI (WIP)
+
+### Fix
+
+- **expenseitem**: source_id wasn't being used when editing expense
+
 ## 0.2.0 (2025-03-19)
 
 ### Feat
