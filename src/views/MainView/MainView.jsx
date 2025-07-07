@@ -16,12 +16,16 @@ export function MainView({ }) {
     expense: null,
     simple: localStorage.getItem("simple") === "true",
     lastSource: +localStorage.getItem("lastSource"),
-    date: null,
+    date: localStorage.getItem("date"),
   })
 
   const navigate = useNavigate()
 
   function load(date = null) {
+    if (localStorage.getItem("date")) {
+      date = localStorage.getItem("date")
+    }
+
     setState(prev => ({ ...prev, loading: true }))
 
     axios.get(
@@ -82,6 +86,7 @@ export function MainView({ }) {
       date.setMonth(date.getMonth() - 1)
     }
 
+    localStorage.setItem("date", date.toISOString().split("T")[0])
     load(date.toISOString().split("T")[0])
   }
 
