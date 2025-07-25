@@ -81,6 +81,10 @@ td {
   th > div {
     width: calc(100vw - 6rem) !important;
   }
+
+  .expenses-modal > div {
+    width: calc(100vw - 6rem);
+  }
 }
 
 @media only screen and (max-width: 600px) and (orientation: portrait) {
