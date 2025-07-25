@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { Button, Card, CardActions, CardContent, CardHeader, MenuItem, Select, TextField } from "@mui/material"
+import { Button, Card, CardActions, CardContent, CardHeader, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
 
 export function ExpensesModal({ state, setState }) {
@@ -109,10 +109,11 @@ export function ExpensesModal({ state, setState }) {
         <CardHeader title="Add Expense" />
         <CardContent>
           <form onSubmit={() => null}>
+            <InputLabel>Source</InputLabel>
             <Select
               required
               onChange={e => selectSource(+e.target.value)}
-              value={state.expense?.source_id}
+              value={state.expense?.source_id ?? ""}
               sx={{ width: "100%", mb: "1rem" }}
             >
               {state.sources.map(source => <MenuItem value={source.id}>{source.name}</MenuItem>)}
