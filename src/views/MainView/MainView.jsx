@@ -9,14 +9,16 @@ import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } f
 
 export function MainView({ }) {
   const [state, setState] = useState({
-    sources: [],
     loading: true,
     editing: null,
     modal: false,
     expense: null,
     simple: localStorage.getItem("simple") === "true",
-    lastSource: +localStorage.getItem("lastSource"),
     date: localStorage.getItem("date"),
+    sources: [],
+    lastSource: +localStorage.getItem("lastSource"),
+    categories: [],
+    lastCategory: +localStorage.getItem("lastCategory"),
   })
 
   const navigate = useNavigate()
