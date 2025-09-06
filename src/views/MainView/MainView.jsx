@@ -41,7 +41,12 @@ export function MainView({ }) {
         }
       }
     )
-    .then(res => setState(prev => ({ ...prev, date, sources: res.data })))
+    .then(res => setState(prev => ({
+      ...prev,
+      date,
+      sources: res.data.expenses,
+      categories: res.data.categories,
+    })))
     .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")

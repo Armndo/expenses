@@ -3,6 +3,12 @@ import { formatNumber } from "@/utils/functions"
 import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 export function ExpensesTable({ state, setState, openModal }) {
+  let categories = {}
+
+  for (const category of state?.categories ?? []) {
+    categories[category.id] = category.name
+  }
+
   return (
     state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).length > 0 ?
     <TableContainer className="expenses-table-container" sx={{ maxHeight: "calc(100vh - 12rem)", overflow: "auto" }}>
@@ -11,7 +17,7 @@ export function ExpensesTable({ state, setState, openModal }) {
           <TableRow>
             {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => (
               <TableCell
-                colSpan={state.simple ? 3 : 4}
+                colSpan={state.simple ? 4 : 5}
                 align="center"
                 sx={{ zIndex: 1 }}
               >
@@ -41,6 +47,7 @@ export function ExpensesTable({ state, setState, openModal }) {
               state={state}
               setState={setState}
               openModal={openModal}
+              categories={categories}
             />
           )}
         </TableBody>
