@@ -6,7 +6,7 @@ export function ExpensesTable({ state, setState, openModal }) {
   let categories = {}
 
   for (const category of state?.categories ?? []) {
-    categories[category.id] = category.name
+    categories[category.id] = category.alias
   }
 
   return (

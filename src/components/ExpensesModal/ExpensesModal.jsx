@@ -163,7 +163,7 @@ export function ExpensesModal({ state, setState }) {
                 sx={{ width: "100%", mb: "1rem" }}
                 label="Category"
               >
-                {state.categories.map(category => <MenuItem value={category.id}>{category.name}</MenuItem>)}
+                {state.categories.map(category => <MenuItem value={category.id}>{category.alias} {category.name}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField
