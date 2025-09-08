@@ -54,7 +54,7 @@ export function LoginView({}) {
   return <>
     {state.loading && <div className="login-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
     <Box sx={{ width: "100vw", height: "100vh" }}>
-      <Card sx={{ width: "50%", maxWidth: "40rem", margin: "auto", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "unset", borderRadius: "1rem" }} elevation={5} >
+      <Card className="login-card" sx={{ width: "50vw", maxWidth: "40rem", margin: "auto", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "unset", borderRadius: "1rem" }} elevation={5} >
         <CardHeader title="Login" />
         <CardContent>
           <form onSubmit={login} id="login-form">
