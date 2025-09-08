@@ -121,3 +121,13 @@ td {
     width: calc(100vw - 6rem);
   }
 }
+
+input {
+  appearance: textfield;
+}
+
+input::-webkit-inner-spin-button,
+input::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
