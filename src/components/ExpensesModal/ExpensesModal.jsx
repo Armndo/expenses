@@ -117,8 +117,8 @@ export function ExpensesModal({ state, setState }) {
   }
 
   return (
-    <div className={`expenses-modal ${state.modal ? "show" : ""}`}>
-      <Card elevation={5} sx={{ borderRadius: "1rem" }} >
+    state.modal && <div className={`expenses-modal show`} onClick={closeModal}>
+      <Card elevation={5} sx={{ borderRadius: "1rem" }} onClick={e => e.stopPropagation()}>
         <CardHeader title="Add Expense" />
         <CardContent>
           <form onSubmit={() => null}>
@@ -163,7 +163,7 @@ export function ExpensesModal({ state, setState }) {
                 sx={{ width: "100%", mb: "1rem" }}
                 label="Category"
               >
-                {state.categories.map(category => <MenuItem value={category.id}>{category.alias} {category.name}</MenuItem>)}
+                {state.categories.map(category => <MenuItem dense value={category.id}>{category.alias} {category.name}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField
@@ -188,8 +188,8 @@ export function ExpensesModal({ state, setState }) {
           </form>
         </CardContent>
         <CardActions sx={{ p: "1rem" }}>
-          <Button color="success" variant="contained" onClick={() => state.expense?.id ? update() : store()}>{state.expense?.id ? "update" : "save"}</Button>
-          <Button color="error" variant="contained"  onClick={closeModal}>Close</Button>
+          <Button color="success" type="button" variant="contained" onClick={() => state.expense?.id ? update() : store()}>{state.expense?.id ? "update" : "save"}</Button>
+          <Button color="error" type="button" variant="contained"  onClick={closeModal}>Close</Button>
         </CardActions>
       </Card>
     </div>

@@ -149,7 +149,7 @@ export function MainView({ }) {
 
   return <>
     {state.loading && <div className="expenses-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
-    <Box sx={{ width: "100vw", height: "calc(100vh - 1rem)" }}>
+    <Box sx={{ width: "100vw", height: "fit-content" }}>
       <ExpensesModal
         state={state}
         setState={setState}
