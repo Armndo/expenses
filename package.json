@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "host": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "husky",
-    "deploy": "npm run build && sh -c \"$(curl -s https://assets.pezatomico.com/scripts/deploy)\""
+    "deploy": "bash -c \"$(curl -s https://assets.pezatomico.com/scripts/deploy)\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

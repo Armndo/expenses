@@ -9,14 +9,16 @@ import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } f
 
 export function MainView({ }) {
   const [state, setState] = useState({
-    sources: [],
     loading: true,
     editing: null,
     modal: false,
     expense: null,
     simple: localStorage.getItem("simple") === "true",
-    lastSource: +localStorage.getItem("lastSource"),
     date: localStorage.getItem("date"),
+    sources: [],
+    lastSource: +localStorage.getItem("lastSource"),
+    categories: [],
+    lastCategory: +localStorage.getItem("lastCategory"),
   })
 
   const navigate = useNavigate()
@@ -29,7 +31,7 @@ export function MainView({ }) {
     setState(prev => ({ ...prev, loading: true }))
 
     axios.get(
-      `${api_url}/expenses`,
+      `${api_url}/data`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -39,7 +41,12 @@ export function MainView({ }) {
         }
       }
     )
-    .then(res => setState(prev => ({ ...prev, date, sources: res.data })))
+    .then(res => setState(prev => ({
+      ...prev,
+      date,
+      sources: res.data.expenses,
+      categories: res.data.categories,
+    })))
     .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")

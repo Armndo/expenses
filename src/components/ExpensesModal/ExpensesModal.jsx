@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { Button, Card, CardActions, CardContent, CardHeader, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
 
 export function ExpensesModal({ state, setState }) {
@@ -14,6 +14,19 @@ export function ExpensesModal({ state, setState }) {
         source_id: value,
       },
       lastSource: value,
+    }))
+  }
+
+  function selectCategory(value) {
+    localStorage.setItem("lastCategory", value)
+
+    setState(prev => ({
+      ...prev,
+      expense: {
+        ...prev.expense,
+        category_id: value,
+      },
+      lastCategory: value,
     }))
   }
 
@@ -109,15 +122,19 @@ export function ExpensesModal({ state, setState }) {
         <CardHeader title="Add Expense" />
         <CardContent>
           <form onSubmit={() => null}>
-            <InputLabel>Source</InputLabel>
-            <Select
-              required
-              onChange={e => selectSource(+e.target.value)}
-              value={state.expense?.source_id ?? ""}
-              sx={{ width: "100%", mb: "1rem" }}
-            >
-              {state.sources.map(source => <MenuItem value={source.id}>{source.name}</MenuItem>)}
-            </Select>
+            <FormControl fullWidth>
+              <InputLabel id="select-source" required>Source</InputLabel>
+              <Select
+                labelId="select-source"
+                required
+                onChange={e => selectSource(+e.target.value)}
+                value={state.expense?.source_id ?? ""}
+                sx={{ width: "100%", mb: "1rem" }}
+                label="Source"
+              >
+                {state.sources.map(source => <MenuItem value={source.id}>{source.name}</MenuItem>)}
+              </Select>
+            </FormControl>
             <TextField
               sx={{ width: "100%", mb: "1rem" }}
               required
@@ -137,6 +154,18 @@ export function ExpensesModal({ state, setState }) {
               value={state.expense?.amount ?? ""}
               onChange={e => editExpense("expense", "amount", e.target.value)}
             />
+            <FormControl fullWidth>
+              <InputLabel id="select-category">Category</InputLabel>
+              <Select
+                labelId="select-category"
+                onChange={e => selectCategory(+e.target.value)}
+                value={state.expense?.category_id ?? ""}
+                sx={{ width: "100%", mb: "1rem" }}
+                label="Category"
+              >
+                {state.categories.map(category => <MenuItem value={category.id}>{category.alias} {category.name}</MenuItem>)}
+              </Select>
+            </FormControl>
             <TextField
               sx={{ width: "100%", mb: "1rem" }}
               label="Description"
