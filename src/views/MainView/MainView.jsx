@@ -31,7 +31,7 @@ export function MainView({ }) {
     setState(prev => ({ ...prev, loading: true }))
 
     axios.get(
-      `${api_url}/expenses`,
+      `${api_url}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
