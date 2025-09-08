@@ -19,7 +19,7 @@ td.instalment {
 .expenses-modal {
   background: #ffffff59;
   position: absolute;
-  height: 100vh;
+  height: calc(100vh - 4rem);
   width: 100vw;
   top: 0;
   left: 0;
@@ -34,7 +34,7 @@ td.instalment {
 }
 
 .expenses-modal > div {
-  /* background: #f0f0f0; */
+  user-select: none;
   padding: 1rem;
   position: absolute;
   left: 50%;
@@ -77,9 +77,25 @@ td {
   text-align: center !important;
 }
 
-@media only screen and (max-width: 767px) {
+.expenses-table-container {
+  border-radius: 1rem;
+}
+
+@media only screen and (max-width: 600px) and (orientation: portrait) {
   th > div {
     width: calc(100vw - 6rem) !important;
+  }
+
+  div.expenses-card {
+    max-height: calc(100vh - 6rem) !important;
+  }
+
+  td {
+    font-size: 2.5vw !important;
+  }
+
+  .expenses-table-container {
+    max-height: calc(100vh - 16rem) !important;
   }
 
   .expenses-modal > div {
@@ -87,22 +103,31 @@ td {
   }
 }
 
-@media only screen and (max-width: 600px) and (orientation: portrait) {
+@media only screen and (max-height: 600px) and (orientation: landscape) {
+  th > div {
+    width: calc(50vw - 4rem) !important;
+    width: calc(100vw - 6rem) !important;
+  }
+
   div.expenses-card {
     max-height: calc(100vh - 6rem) !important;
   }
 
   .expenses-table-container {
     max-height: calc(100vh - 16rem) !important;
+  }
+
+  .expenses-modal > div {
+    width: calc(100vw - 6rem);
   }
 }
 
-@media only screen and (max-height: 600px) and (orientation: landscape) {
-  div.expenses-card {
-    max-height: calc(100vh - 6rem) !important;
-  }
+input {
+  appearance: textfield;
+}
 
-  .expenses-table-container {
-    max-height: calc(100vh - 16rem) !important;
-  }
+input::-webkit-inner-spin-button,
+input::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
 }
