@@ -72,27 +72,44 @@ function SimpleItem({ categories, className, item }) {
   )
 }
 
-let aux = null
-
 export function ExpenseItem({ index, offset, state, setState, openModal, categories }) {
   return (
-    <TableRow>
-      {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(
-        source => state.simple ?
-          // <TableCell className={`simple ${index >= offset ? "instalment" : ""}`}>
-          //   {aux = (source.expenses?.[index]?.description ?? source.instalments?.[index - offset]?.description)}{aux ? " - " : ""}{formatNumber(source.expenses?.[index]?.amount?.toFixed(2) ?? monthlyAmount(source.instalments?.[index - offset]) ?? "-", "$")}
-          // </TableCell> :
-          <SimpleItem categories={categories} className={`simple ${index >= offset ? "instalment" : ""}`} item={source.expenses?.[index] || source.instalments?.[index - offset]} /> :
-          (
-            source.expenses?.[index] ?
-              <ShownItem categories={categories} state={state} index={index} setState={setState} source={source} item={source.expenses[index]} openModal={openModal} />
-            : source.instalments?.[index - offset] ?
-              <ShownItem categories={categories} state={state} index={index} setState={setState} source={source} openModal={openModal} className="instalment" offset={offset} target={"instalments"} item={source.instalments[index - offset]} />
-            : <>
-              {Array(5).fill(null).map((_, i) => <TableCell className={index >= offset ? "instalment" : ""}>-</TableCell>)}
-            </>
-          )
-        )}
+    <TableRow key={`row_${index}`}>
+      {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map((source, idx) => {
+        if (state.simple) return <SimpleItem
+          key={`r${index}c${idx}`}
+          categories={categories}
+          className={`simple ${index >= offset ? "instalment" : ""}`}
+          item={source.expenses?.[index] || source.instalments?.[index - offset]}
+        />
+
+        if (source.expenses?.[index]) return <ShownItem
+          key={`r${index}c${idx}`}
+          categories={categories}
+          state={state}
+          index={index}
+          setState={setState}
+          source={source}
+          item={source.expenses[index]}
+          openModal={openModal}
+        />
+
+        if (source.instalments?.[index - offset]) return <ShownItem
+          key={`r${index}c${idx}`}
+          categories={categories}
+          state={state}
+          index={index}
+          setState={setState}
+          source={source}
+          openModal={openModal}
+          className="instalment"
+          offset={offset}
+          target={"instalments"}
+          item={source.instalments[index - offset]}
+        />
+
+        return Array(5).fill(null).map((_, i) => <TableCell key={`r${index}esp_${i}`} className={index >= offset ? "instalment" : ""}>-</TableCell>)
+      })}
     </TableRow>
   )
 }

@@ -20,6 +20,7 @@ export function ExpensesTable({ state, setState, openModal }) {
                 colSpan={state.simple ? 4 : 5}
                 align="center"
                 sx={{ zIndex: 1 }}
+                key={source.name}
               >
                 <div>
                   <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
@@ -42,6 +43,7 @@ export function ExpensesTable({ state, setState, openModal }) {
         <TableBody>
           {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0)).fill(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0)).map((offset, index) => 
             <ExpenseItem
+              key={index}
               index={index}
               offset={offset}
               state={state}

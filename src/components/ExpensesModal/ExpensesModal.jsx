@@ -148,7 +148,7 @@ export function ExpensesModal({ state, setState }) {
                   <CreditCardTwoTone />
                 </InputAdornment>}
               >
-                {state.sources.map(source => <MenuItem value={source.id}>{source.name}</MenuItem>)}
+                {state.sources.map(source => <MenuItem key={`source_${source.id}`} value={source.id}>{source.name}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField
@@ -199,7 +199,7 @@ export function ExpensesModal({ state, setState }) {
                 </InputAdornment>}
               >
                 <MenuItem dense value={0}>Select a category</MenuItem>
-                {state.categories.map(category => <MenuItem dense value={category.id}>{category.alias} {category.name}</MenuItem>)}
+                {state.categories.map(category => <MenuItem key={`category_${category.id}`} dense value={category.id}>{category.alias} {category.name}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField
