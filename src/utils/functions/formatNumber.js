@@ -3,7 +3,7 @@ export function formatNumber(number, prefix = null, errorString = "-") {
     return errorString
   }
 
-  if (number < 1000) {
+  if (Math.abs(number) < 1000) {
     return prefix === null ? `${number}` : prefix + number
   }
 

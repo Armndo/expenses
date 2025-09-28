@@ -34,7 +34,7 @@ export function ExpensesModal({ state, setState }) {
   function store() {
     const expense = { ...state.expense }
 
-    if (expense.amount === null || isNaN(expense.amount) || expense.amount < 0.01 ) {
+    if (expense.amount === null || isNaN(expense.amount) || +expense.amount === 0) {
       alert("Incorrect 'Amount' format.")
       return
     }
@@ -73,7 +73,7 @@ export function ExpensesModal({ state, setState }) {
   function update() {
     const expense = { ...state.expense }
 
-    if (expense.amount === null || isNaN(expense.amount) || expense.amount < 0.01 ) {
+    if (expense.amount === null || isNaN(expense.amount) || +expense.amount === 0) {
       alert("Incorrect 'Amount' format.")
       return
     }
@@ -183,7 +183,6 @@ export function ExpensesModal({ state, setState }) {
                 },
                 htmlInput: {
                   step: 0.01,
-                  min: 0.01,
                 }
               }}
             />

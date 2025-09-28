@@ -3,7 +3,7 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { formatNumber, standardDate } from "@/utils/functions"
-import { ExpensesModal, ExpensesTable } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable } from "@/components"
 import "./MainView.css"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 
@@ -12,6 +12,7 @@ export function MainView({ }) {
     loading: true,
     editing: null,
     modal: false,
+    overview: false,
     expense: null,
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
@@ -129,6 +130,13 @@ export function MainView({ }) {
     }))
   }
 
+  function openOverview() {
+    setState(prev => ({
+      ...prev,
+      overview: true,
+    }))
+  }
+
   function changeMode() {
     localStorage.setItem("simple", !state.simple)
 
@@ -154,10 +162,15 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      {/* <OverviewModal
+        state={state}
+        setState={setState}
+      /> */}
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Add</Button>
+          <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
           <Button size="small" color="secondary" variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
           <Button size="small" color="secondary" variant="contained" onClick={() => changeDate(true)} disabled={state.editing}>next</Button>
