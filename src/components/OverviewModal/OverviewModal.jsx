@@ -1,28 +1,26 @@
-import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
-import { Bar, BarChart, Cell, Legend, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { autoRange, foregroundColor, formatNumber } from "@/utils/functions"
+import { Button, Card, CardActions, CardContent, CardHeader } from "@mui/material"
+import { Bar, BarChart, Cell, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 export function OverviewModal({ state, setState }) {
   function closeModal() {
     setState(prev => ({
       ...prev,
-      overview: false,
+      overview: false
     }))
   }
 
-  const data = state.categories.filter(item => item.expenses_count > 0)
-  data.sort((a, b) => b?.expenses_count - a?.expenses_count)
-
-  function itemLabel({ payload, x, y, width, heigth, value }) {
-    return <text x={x + width / 2} y={y} fill="#000" color="#f00" dy={16} textAnchor="middle">{value}</text>;
-  }
+  const data = state.categories.filter(item => state.byAmount ? item.expenses_sum_amount > 0 :  item.expenses_count > 0)
+  data.sort((a, b) => state.byAmount ? b?.expenses_sum_amount - a?.expenses_sum_amount : b?.expenses_count - a?.expenses_count)
 
   function DataTooltip({ active, payload, label }) {
     const shown = active && payload?.[0]?.payload
     const datum = payload?.[0]?.payload
-    console.log(active, payload, label);
-    return shown && <div style={{ padding: "1rem", background: "#f0f0f0" }}>
-      <p>{datum.alias} {datum.name}</p>
-      Expenses: {datum.expenses_count}
+
+    return shown && <div style={{ padding: ".25rem", background: datum.color, color: foregroundColor(datum.color), lineHeight: .25, textAlign: "center", minWidth: "10rem", borderRadius: ".25rem" }}>
+      <h3>{datum.name} <span style={{ textShadow: `0 0 4px ${foregroundColor(datum.color)}` }}>{datum.alias}</span></h3>
+      <p>{datum.expenses_count} expense{datum.expenses_count > 1 && "s"}</p>
+      <p>${formatNumber(+(datum.expenses_sum_amount).toFixed(2))}</p>
     </div>
   }
 
@@ -30,18 +28,20 @@ export function OverviewModal({ state, setState }) {
     state.overview && <div className="overview-modal" onClick={closeModal}>
       <Card elevation={5} sx={{ borderRadius: "1rem" }} onClick={e => e.stopPropagation()}>
         <CardHeader title="Expenses Overview" />
+        <CardActions sx={{ p: "1rem", pt: 0 }}>
+          <Button size="small" color="success" variant="contained" onClick={() => {
+            localStorage.setItem("byAmount", !state.byAmount)
+            setState(prev => ({...prev, byAmount: !state.byAmount }))
+          }}>{state.byAmount ? "By Expenses" : "By Amount"}</Button>
+        </CardActions>
         <CardContent>
           <ResponsiveContainer width={"100%"} height={400}>
             <BarChart data={data}>
-              <XAxis dataKey={"alias"} tickSize={0} tickMargin={8} tick={{ fontSize: 14}}
-                // interval={0} 
-              />
+              <YAxis width="auto" tickFormatter={(value) => !state.byAmount ? `${autoRange(value, 0)}` : `$${formatNumber((+value).toFixed(0))}`} />
+              <XAxis dataKey={"alias"} tickSize={0} tickMargin={8} tick={{ fontSize: 14}} />
               <Tooltip content={DataTooltip} />
-              <Legend />
-              <Bar dataKey={"expenses_count"}
-                // fillRule="evenodd"
+              <Bar dataKey={state.byAmount ? "expenses_sum_amount" : "expenses_count"}
                 fill="#1976d2"
-                // label={itemLabel}
                 activeBar={<Rectangle stroke="#f0f0f0" />}
               >
                 {data.map((item, index) => <Cell key={`cell-${index}`} fill={item.color} />)}

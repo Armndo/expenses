@@ -13,6 +13,7 @@ export function MainView({ }) {
     editing: null,
     modal: false,
     overview: false,
+    byAmount: localStorage.getItem("byAmount") === "true",
     expense: null,
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
@@ -162,10 +163,10 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
-      {/* <OverviewModal
+      <OverviewModal
         state={state}
         setState={setState}
-      /> */}
+      />
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
