@@ -1,8 +1,11 @@
 import { autoRange, foregroundColor, formatNumber } from "@/utils/functions"
 import { Button, Card, CardActions, CardContent, CardHeader } from "@mui/material"
+import { useEffect, useState } from "react"
 import { Bar, BarChart, Cell, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 export function OverviewModal({ state, setState }) {
+  const [data, setData] = useState([])
+
   function closeModal() {
     setState(prev => ({
       ...prev,
@@ -10,10 +13,14 @@ export function OverviewModal({ state, setState }) {
     }))
   }
 
-  const data = state.categories.filter(item => state.byAmount ? item.expenses_sum_amount > 0 :  item.expenses_count > 0)
-  data.sort((a, b) => state.byAmount ? b?.expenses_sum_amount - a?.expenses_sum_amount : b?.expenses_count - a?.expenses_count)
+  useEffect(() => {
+    const tmp = state.categories.filter(item => item.expenses_sum_amount > 0 || item.expenses_count > 0)
+    tmp.sort((a, b) => state.byAmount ? b?.expenses_sum_amount - a?.expenses_sum_amount : b?.expenses_count - a?.expenses_count)
 
-  function DataTooltip({ active, payload, label }) {
+    setData(tmp)
+  }, [state.categories, state.byAmount])
+
+  function DataTooltip({ active, payload }) {
     const shown = active && payload?.[0]?.payload
     const datum = payload?.[0]?.payload
 
