@@ -1,3 +1,28 @@
+## 0.4.0 (2025-11-17)
+
+### Feat
+
+- **overviewmodal**: implemented charts by amount or expenses, fixed barchart tooltip
+- refactor readability of ExpenseItem, added unique keys to all mapped components
+- wIP implementing OverviewModal
+- **loginview**: added media queries to change width of login inputs
+- **expensemodal**: added more validation and icons to make it look less empty
+- fixed styles to match cellphone landscape and portrait
+- **package.json**: changed deploy script
+- **mainview**: changed "index" request to make it work with refactor
+- **expensestable**: added alias (emoji) instead of name of category
+- added categories to expensestable, to expenseitem, and send to backend
+- **expensemodal**: adding category dropwdown for adding expenses
+- **expensemodal**: media query for cellphone size for modal
+- **expensesmodal**: added label in order to show the selected item
+- **expensestable**: responsive table now working in both desktop and phone
+- **expensestable**: reworked cell size for minimum width, added SimpleItem component for simple
+
+### Fix
+
+- changed empty endpoint to avoid CORS error
+- **expensestable**: corrected overflow so it doesnt show up double, nor when it's not needed (auto)
+
 ## 0.3.0 (2025-07-06)
 
 ### Feat
