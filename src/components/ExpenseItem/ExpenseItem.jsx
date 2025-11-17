@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { formatDate, formatNumber } from "@/utils/functions"
+import { formatDate, numberFormat } from "@/utils/functions"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
 import axios from "axios"
 
@@ -48,7 +48,7 @@ function ShownItem({ categories, setState, item, index, source, offset = 0, targ
   return (
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
-      <TableCell className={className}>{formatNumber(monthlyAmount(item) ?? "-", "$")}</TableCell>
+      <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
       <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
       <TableCell className={className}>{item?.description ?? "-"}</TableCell>
       <TableCell className={className}>
@@ -65,7 +65,7 @@ function SimpleItem({ categories, className, item }) {
   return (
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
-      <TableCell className={className}>{formatNumber(monthlyAmount(item) ?? "-", "$")}</TableCell>
+      <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
       <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
       <TableCell className={className}>{item?.description ?? "-"}</TableCell>
     </>

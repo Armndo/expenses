@@ -1,4 +1,4 @@
-import { autoRange, foregroundColor, formatNumber } from "@/utils/functions"
+import { foregroundColor, numberFormat } from "@/utils/functions"
 import { Button, Card, CardActions, CardContent, CardHeader } from "@mui/material"
 import { useEffect, useState } from "react"
 import { Bar, BarChart, Cell, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
@@ -27,7 +27,7 @@ export function OverviewModal({ state, setState }) {
     return shown && <div style={{ padding: ".25rem", background: datum.color, color: foregroundColor(datum.color), lineHeight: .25, textAlign: "center", minWidth: "10rem", borderRadius: ".25rem" }}>
       <h3>{datum.name} <span style={{ textShadow: `0 0 4px ${foregroundColor(datum.color)}` }}>{datum.alias}</span></h3>
       <p>{datum.expenses_count} expense{datum.expenses_count > 1 && "s"}</p>
-      <p>${formatNumber(+(datum.expenses_sum_amount).toFixed(2))}</p>
+      <p>{numberFormat(datum.expenses_sum_amount, 2, "$")}</p>
     </div>
   }
 
@@ -44,7 +44,7 @@ export function OverviewModal({ state, setState }) {
         <CardContent>
           <ResponsiveContainer width={"100%"} height={400}>
             <BarChart data={data}>
-              <YAxis width="auto" tickFormatter={(value) => !state.byAmount ? `${autoRange(value, 0)}` : `$${formatNumber((+value).toFixed(0))}`} />
+              <YAxis width="auto" tickFormatter={(value) => !state.byAmount ? numberFormat(value, 0) : numberFormat(value, 2, "$")} />
               <XAxis dataKey={"alias"} tickSize={0} tickMargin={8} tick={{ fontSize: 14}} />
               <Tooltip content={DataTooltip} />
               <Bar dataKey={state.byAmount ? "expenses_sum_amount" : "expenses_count"}

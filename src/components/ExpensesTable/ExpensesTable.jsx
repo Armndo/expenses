@@ -1,5 +1,5 @@
 import { ExpenseItem } from "@/components"
-import { formatNumber } from "@/utils/functions"
+import { numberFormat } from "@/utils/functions"
 import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 export function ExpensesTable({ state, setState, openModal }) {
@@ -25,15 +25,27 @@ export function ExpensesTable({ state, setState, openModal }) {
                 <div>
                   <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
                   <Tooltip title="De contado">
-                    <Chip size="small" sx={{ background: "transparent", border: "1px solid #c0c0c0" }} label={formatNumber(source.expenses.reduce((a, b) => a + b.amount, 0).toFixed(2), "$")} />
+                    <Chip
+                      size="small"
+                      sx={{ background: "transparent", border: "1px solid #c0c0c0" }}
+                      label={numberFormat(source.expenses.reduce((a, b) => a + b.amount, 0), 2, "$")}
+                    />
                   </Tooltip>
                   {" + "}
                   <Tooltip title="A meses">
-                    <Chip size="small" sx={{ background: "#bdbaff" }} label={formatNumber(source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0).toFixed(2), "$")} />
+                    <Chip
+                      size="small"
+                      sx={{ background: "#bdbaff" }}
+                      label={numberFormat(source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0), 2, "$")}
+                    />
                   </Tooltip>
                   {" = "}
                   <Tooltip title="Total">
-                    <Chip size="small" sx={{ background: "#c0c0c0" }} label={formatNumber((source.expenses.reduce((a, b) => a + b.amount, 0) + source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0)).toFixed(2), "$")} />
+                    <Chip
+                      size="small"
+                      sx={{ background: "#c0c0c0" }}
+                      label={numberFormat((source.expenses.reduce((a, b) => a + b.amount, 0) + source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0)), 2, "$")}
+                    />
                   </Tooltip>
                 </div>
               </TableCell>
@@ -41,7 +53,9 @@ export function ExpensesTable({ state, setState, openModal }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0)).fill(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0)).map((offset, index) => 
+          {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0))
+          .fill(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0))
+          .map((offset, index) => 
             <ExpenseItem
               key={index}
               index={index}
