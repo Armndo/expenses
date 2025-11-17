@@ -125,6 +125,7 @@ export function MainView({ }) {
         amount: null,
         description: null,
         instalments: null,
+        next: false,
         source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
         ...expense,
       },

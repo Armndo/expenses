@@ -1,10 +1,9 @@
 import { api_url } from "@/env"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
-import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
 
 export function ExpensesModal({ state, setState }) {
-
   function selectSource(value) {
     localStorage.setItem("lastSource", value)
 
@@ -40,7 +39,7 @@ export function ExpensesModal({ state, setState }) {
     }
 
     if (expense.instalments !== null && (!Number.isInteger(+expense.instalments) || +expense.instalments < 2)) {
-      alert("Incorrect 'Installments' format.")
+      alert("Incorrect 'Instalments' format.")
       return
     }
 
@@ -79,7 +78,7 @@ export function ExpensesModal({ state, setState }) {
     }
 
     if (expense.instalments !== null && (!Number.isInteger(+expense.instalments) || +expense.instalments < 2)) {
-      alert("Incorrect 'Installments' format.")
+      alert("Incorrect 'Instalments' format.")
       return
     }
 
@@ -152,7 +151,7 @@ export function ExpensesModal({ state, setState }) {
               </Select>
             </FormControl>
             <TextField
-              sx={{ width: "100%", mb: "1rem" }}
+              sx={{ width: "100%" }}
               required
               type="date"
               label="Date"
@@ -167,6 +166,18 @@ export function ExpensesModal({ state, setState }) {
                 }
               }}
             />
+            <FormGroup sx={{ float: "right" }}>
+              <FormControlLabel
+                control={<Checkbox
+                  onChange={e => editExpense("expense", "next", e.target.checked)}
+                  checked={state.expense?.next ?? false}
+                  color="default"
+                  sx={{ p: 0, m: "9px", mr: 0, ml: "4px", "& .MuiSvgIcon-root": { fontSize: "1rem" }}}
+                />}
+                label="Billed next period?"
+                labelPlacement="start"
+                sx={{ mr: 0, "& .MuiFormControlLabel-label": { fontSize: ".75rem" }}} />
+            </FormGroup>
             <TextField
               required
               sx={{ width: "100%", mb: "1rem" }}
@@ -223,7 +234,7 @@ export function ExpensesModal({ state, setState }) {
             />
             <TextField
               sx={{ width: "100%" }}
-              label="Installments"
+              label="Instalments"
               placeholder={"2"}
               type="number"
               value={state.expense?.instalments ?? ""}
