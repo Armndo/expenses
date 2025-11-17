@@ -1,24 +1,27 @@
 {
   "name": "expenses",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "host": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "husky",
-    "deploy": "npm run build && sh -c \"$(curl -s https://assets.pezatomico.com/scripts/deploy)\""
+    "deploy": "bash -c \"$(curl -s https://assets.pezatomico.com/scripts/deploy)\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@mui/material": "^6.4.8",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
     "axios": "^1.7.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.2.0"
+    "react-router-dom": "^7.2.0",
+    "recharts": "^3.1.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.7.1",

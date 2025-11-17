@@ -3,17 +3,24 @@ import { formatNumber } from "@/utils/functions"
 import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 export function ExpensesTable({ state, setState, openModal }) {
+  let categories = {}
+
+  for (const category of state?.categories ?? []) {
+    categories[category.id] = category.alias
+  }
+
   return (
     state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).length > 0 ?
-    <TableContainer sx={{ maxHeight: "80vh" }}>
-      <Table size="small" stickyHeader>
+    <TableContainer className="expenses-table-container" sx={{ maxHeight: "calc(100vh - 12rem)", overflow: "auto" }}>
+      <Table size="small" stickyHeader className="expenses_table">
         <TableHead>
           <TableRow>
             {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => (
               <TableCell
-                colSpan={state.simple ? 1 : 4}
+                colSpan={state.simple ? 4 : 5}
                 align="center"
                 sx={{ zIndex: 1 }}
+                key={source.name}
               >
                 <div>
                   <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
@@ -36,11 +43,13 @@ export function ExpensesTable({ state, setState, openModal }) {
         <TableBody>
           {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0)).fill(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0)).map((offset, index) => 
             <ExpenseItem
+              key={index}
               index={index}
               offset={offset}
               state={state}
               setState={setState}
               openModal={openModal}
+              categories={categories}
             />
           )}
         </TableBody>

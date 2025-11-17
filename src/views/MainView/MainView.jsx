@@ -3,20 +3,24 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { formatNumber, standardDate } from "@/utils/functions"
-import { ExpensesModal, ExpensesTable } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable } from "@/components"
 import "./MainView.css"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 
 export function MainView({ }) {
   const [state, setState] = useState({
-    sources: [],
     loading: true,
     editing: null,
     modal: false,
+    overview: false,
+    byAmount: localStorage.getItem("byAmount") === "true",
     expense: null,
     simple: localStorage.getItem("simple") === "true",
-    lastSource: +localStorage.getItem("lastSource"),
     date: localStorage.getItem("date"),
+    sources: [],
+    lastSource: +localStorage.getItem("lastSource"),
+    categories: [],
+    lastCategory: +localStorage.getItem("lastCategory"),
   })
 
   const navigate = useNavigate()
@@ -29,7 +33,7 @@ export function MainView({ }) {
     setState(prev => ({ ...prev, loading: true }))
 
     axios.get(
-      `${api_url}/expenses`,
+      `${api_url}/data`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -39,7 +43,12 @@ export function MainView({ }) {
         }
       }
     )
-    .then(res => setState(prev => ({ ...prev, date, sources: res.data })))
+    .then(res => setState(prev => ({
+      ...prev,
+      date,
+      sources: res.data.expenses,
+      categories: res.data.categories,
+    })))
     .catch(err => {
       if (err?.status === 401) {
         localStorage.removeItem("token")
@@ -122,6 +131,13 @@ export function MainView({ }) {
     }))
   }
 
+  function openOverview() {
+    setState(prev => ({
+      ...prev,
+      overview: true,
+    }))
+  }
+
   function changeMode() {
     localStorage.setItem("simple", !state.simple)
 
@@ -142,21 +158,26 @@ export function MainView({ }) {
 
   return <>
     {state.loading && <div className="expenses-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
-    <Box sx={{ width: "100vw", height: "calc(100vh - 1rem)" }}>
+    <Box sx={{ width: "100vw", height: "fit-content" }}>
       <ExpensesModal
         state={state}
         setState={setState}
       />
-      <Card sx={{ margin: "auto", mt: "1rem", maxHeight: "calc(100vh - 2rem)", maxWidth: "90vw", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
+      <OverviewModal
+        state={state}
+        setState={setState}
+      />
+      <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Add</Button>
+          <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
           <Button size="small" color="secondary" variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
           <Button size="small" color="secondary" variant="contained" onClick={() => changeDate(true)} disabled={state.editing}>next</Button>
           <Button size="small" color="error" variant="contained" onClick={logout}>Logout</Button>
         </CardActions>
-        <CardContent sx={{ width: "calc(100% - 2rem)", overflow: "scroll", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
+        <CardContent sx={{ width: "calc(100% - 2rem)", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
           <ExpensesTable
             state={state}
             setState={setState}
