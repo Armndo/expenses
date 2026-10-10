@@ -49,8 +49,14 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
       <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
-      <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
-      <TableCell className={className}>{item?.description ?? "-"}</TableCell>
+      {/* Incomes have no category: the description takes its column too. */}
+      {target === "incomes" ?
+        <TableCell className={className} colSpan={2}>{item?.description ?? "-"}</TableCell> :
+        <>
+          <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
+          <TableCell className={className}>{item?.description ?? "-"}</TableCell>
+        </>
+      }
       <TableCell className={className}>
         <ButtonGroup size="small">
           <Button variant="contained" color="warning" onClick={() => openModal({ ...item, source_id: source.id })}>✎</Button>
@@ -61,13 +67,18 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
   )
 }
 
-function SimpleItem({ categories, className, item }) {
+function SimpleItem({ categories, className, item, target = "expenses" }) {
   return (
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
       <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
-      <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
-      <TableCell className={className}>{item?.description ?? "-"}</TableCell>
+      {target === "incomes" ?
+        <TableCell className={className} colSpan={2}>{item?.description ?? "-"}</TableCell> :
+        <>
+          <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
+          <TableCell className={className}>{item?.description ?? "-"}</TableCell>
+        </>
+      }
     </>
   )
 }
@@ -87,6 +98,7 @@ export function ExpenseItem({ index, rows, state, setState, openModal, openIncom
           key={`r${index}c${idx}`}
           categories={categories}
           className={`simple ${className ?? ""}`}
+          target={group}
           item={item}
         />
 
