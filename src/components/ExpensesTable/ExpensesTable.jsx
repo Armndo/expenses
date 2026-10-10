@@ -50,7 +50,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal }) {
                       label={numberFormat(source.expenses.reduce((a, b) => a + b.amount, 0), 2, "$")}
                     />
                   </Tooltip>
-                  {" + "}
+                  {" · "}
                   <Tooltip title="A meses">
                     <Chip
                       size="small"
@@ -58,7 +58,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal }) {
                       label={numberFormat(source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0), 2, "$")}
                     />
                   </Tooltip>
-                  {" = "}
+                  {" · "}
                   <Tooltip title="Total">
                     <Chip
                       size="small"
