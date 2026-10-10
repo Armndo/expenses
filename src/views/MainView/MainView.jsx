@@ -252,7 +252,7 @@ export function MainView({ }) {
               <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Logout</Box>
             </Button>
           </Box>}
-          subheader={<Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem", mt: ".5rem" }}>
+          subheader={<Box className="summary-chips" sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem", mt: ".5rem" }}>
             {/* The API sends null when there is no value (before the balance start month, or with a missing
                 exchange rate): that chip is left out instead of showing a dash. */}
             {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null).map(chip => <Tooltip key={chip.key} title={chip.title}>
@@ -265,7 +265,7 @@ export function MainView({ }) {
                 color={state.rates[currency] ? "default" : "error"}
                 disabled={state.editing}
                 onClick={() => openRateModal(currency)}
-                label={`${currency} ${state.rates[currency] ? numberFormat(state.rates[currency], 2, "$") : "?"}`}
+                label={state.rates[currency] ? numberFormat(state.rates[currency], 2, "$") : "?"}
               />
             </Tooltip>)}
           </Box>}

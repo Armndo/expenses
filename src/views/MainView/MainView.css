@@ -127,6 +127,20 @@ td {
     display: none;
   }
 
+  /* Tighter chips in the summary row so that its four totals and the exchange rate fit in one line. */
+  .summary-chips {
+    gap: .25rem !important;
+  }
+
+  .summary-chips .MuiChip-root {
+    font-size: .7rem;
+  }
+
+  .summary-chips .MuiChip-label {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
   /* One line for the buttons, and the same width in simple and advanced mode. */
   .main-actions {
     flex-wrap: nowrap !important;
