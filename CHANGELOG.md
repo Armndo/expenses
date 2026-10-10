@@ -1,3 +1,40 @@
+## 0.5.0 (2026-10-10)
+
+### Feat
+
+- **summary**: show the pending instalments chip before the balance
+- **sources**: show Credit or Debit, list debit accounts for incomes, remember the transfer origin
+- **expensestable**: show whether a card carries debt from earlier periods next to its name
+- **expenseitem**: list transfers after the instalments and before the incomes
+- **mainview**: blue Balance chip, debit-only origin in transfers and a 3-decimal rate chip
+- **currency**: show other currencies, edit the exchange rate and convert between them
+- **mainview**: show the month summary as chips and move Logout next to the arrows
+- **monthpicker**: pick the month and year from a card between the previous and next arrows
+- **mainview**: drop Income from the summary and let the action buttons wrap
+- **expenseitem**: transfers first and incomes last, in amber, with an arrow and the description
+- **expensestable**: hide chips at zero, add a Paid chip and keep the chips on one line
+- **mainview**: call the debit accounts total Debit in the subtitle
+- **transfersmodal**: add the Transfer button and modal, and cash and debt in the subtitle
+- **expensestable**: show transfers in the grid and an owed or balance chip per source
+- **expenseitem**: span the income description over the category column
+- **expensestable**: translate the chip tooltips and call the cash chip In full
+- **expensestable**: use a dot between all the source chips
+- **mainview**: rename Total money to Balance and use a dot between the source chips
+- **mainview**: show spent, income and total money from the API summary
+- **mainview**: add Total money and rename the Add button to Expense
+- **expensestable**: show incomes above expenses with a green background
+- **incomesmodal**: add, edit and delete incomes from the main view
+- implemented new number format function, and replaced current one accross all files
+- **overviewmodal**: improved filtering of data, now accepting negatives
+- **expensemodal**: added billed next period checkbox
+
+### Fix
+
+- **mainview**: drop the currency from the rate chip and tighten the summary chips on a phone
+- **expensestable**: round the instalment share on whole cents like the API
+- **expensestable**: round each instalment share to cents like the API
+- **mainview**: let the expenses card use the full dynamic viewport height on mobile
+
 ## 0.4.0 (2025-11-17)
 
 ### Feat

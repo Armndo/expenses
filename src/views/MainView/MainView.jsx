@@ -2,10 +2,24 @@ import { api_url } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { formatNumber, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable } from "@/components"
+import { defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, TransfersModal } from "@/components"
 import "./MainView.css"
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
+import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Tooltip, Typography } from "@mui/material"
+
+function money(value) {
+  return numberFormat(value, 2, "$")
+}
+
+/** The month totals under the title, from `summary` (the API does the math). */
+const SUMMARY_CHIPS = [
+  { key: "spent", title: "Spent", sx: { background: "#c0c0c0" } },
+  { key: "cash", title: "Debit", sx: { background: "#c8e6c9" } },
+  { key: "debt", title: "Debt", sx: { background: "#ffcdd2" } },
+  { key: "pending_instalments", title: "Pending instalments", sx: { background: "#bdbaff" } },
+  { key: "total_money", title: "Balance", sx: { background: "#bbdefb" } },
+]
 
 export function MainView({ }) {
   const [state, setState] = useState({
@@ -15,10 +29,19 @@ export function MainView({ }) {
     overview: false,
     byAmount: localStorage.getItem("byAmount") === "true",
     expense: null,
+    incomeModal: false,
+    income: null,
+    transferModal: false,
+    transfer: null,
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
     sources: [],
+    summary: null,
+    rates: {},
+    rateModal: false,
+    rate: null,
     lastSource: +localStorage.getItem("lastSource"),
+    lastTransferFrom: +localStorage.getItem("lastTransferFrom"),
     categories: [],
     lastCategory: +localStorage.getItem("lastCategory"),
   })
@@ -48,6 +71,8 @@ export function MainView({ }) {
       date,
       sources: res.data.expenses,
       categories: res.data.categories,
+      summary: res.data.summary ?? null,
+      rates: res.data.rates ?? {},
     })))
     .catch(err => {
       if (err?.status === 401) {
@@ -58,26 +83,24 @@ export function MainView({ }) {
     .finally(() => setState(prev => ({ ...prev, loading: false })))
   }
 
-  function currentDate(date = null) {
-    const d = date ? new Date(date) : new Date()
-    d.setMinutes(d.getMinutes() - (new Date()).getTimezoneOffset())
+  /** Year and month (0 to 11) being shown: the saved date, or the current month. */
+  function shownMonth() {
+    if (!state.date) {
+      const now = new Date()
 
-    const months = [
-      "January",
-      "Febrary",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ]
+      return { year: now.getFullYear(), month: now.getMonth() }
+    }
 
-    return `${months[d.getMonth()]} ${d.getFullYear()} `
+    const [year, month] = state.date.split("-").map(Number)
+
+    return { year, month: month - 1 }
+  }
+
+  function selectMonth(year, month) {
+    const date = `${year}-${String(month + 1).padStart(2, "0")}-02`
+
+    localStorage.setItem("date", date)
+    load(date)
   }
 
   function changeDate(next = false) {
@@ -125,9 +148,50 @@ export function MainView({ }) {
         amount: null,
         description: null,
         instalments: null,
+        next: false,
         source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
         ...expense,
       },
+    }))
+  }
+
+  function openIncomeModal(income = {}) {
+    // An income goes to a debit account: the only one, or the last source used if it is one.
+    const accounts = incomeSources(state.sources, null)
+
+    setState(prev => ({
+      ...prev,
+      incomeModal: true,
+      income: {
+        date: standardDate(),
+        amount: null,
+        description: null,
+        source_id: accounts.length === 1 ? accounts[0].id : (accounts.some(source => source.id === state.lastSource) ? state.lastSource : null),
+        ...income,
+      },
+    }))
+  }
+
+  function openTransferModal(transfer = {}) {
+    setState(prev => ({
+      ...prev,
+      transferModal: true,
+      transfer: {
+        date: standardDate(),
+        amount: null,
+        description: null,
+        from_source_id: defaultTransferFrom(state.sources, state.lastTransferFrom),
+        to_source_id: null,
+        ...transfer,
+      },
+    }))
+  }
+
+  function openRateModal(currency) {
+    setState(prev => ({
+      ...prev,
+      rateModal: true,
+      rate: { currency, rate: prev.rates[currency] ?? null },
     }))
   }
 
@@ -156,10 +220,25 @@ export function MainView({ }) {
     load()
   }, [])
 
+  // Currencies other than pesos used by a source: each gets a chip with its exchange rate.
+  const foreignCurrencies = [...new Set(state.sources.map(source => source.currency).filter(currency => currency && currency !== "MXN"))]
+
   return <>
     {state.loading && <div className="expenses-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
     <Box sx={{ width: "100vw", height: "fit-content" }}>
       <ExpensesModal
+        state={state}
+        setState={setState}
+      />
+      <IncomesModal
+        state={state}
+        setState={setState}
+      />
+      <TransfersModal
+        state={state}
+        setState={setState}
+      />
+      <RatesModal
         state={state}
         setState={setState}
       />
@@ -168,36 +247,51 @@ export function MainView({ }) {
         setState={setState}
       />
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
-        <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
-        <CardActions sx={{ p: "1rem", pt: 0 }}>
-          <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Add</Button>
+        <CardHeader
+          title={<Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "wrap", gap: { xs: ".25rem", sm: ".5rem" } }}>
+            <Button size="small" color="secondary" variant="contained" aria-label="Previous month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate()} disabled={state.editing}><ChevronLeft fontSize="small" /></Button>
+            <MonthPicker {...shownMonth()} onSelect={selectMonth} disabled={state.editing} />
+            <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate(true)} disabled={state.editing}><ChevronRight fontSize="small" /></Button>
+            <Button size="small" color="error" variant="contained" aria-label="Logout" sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 }, height: 30 }} onClick={logout}>
+              <Logout fontSize="small" sx={{ display: { xs: "block", sm: "none" } }} />
+              <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Logout</Box>
+            </Button>
+          </Box>}
+          subheader={<Box className="summary-chips" sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem", mt: ".5rem" }}>
+            {/* The API sends null when there is no value (before the balance start month, or with a missing
+                exchange rate): that chip is left out instead of showing a dash. */}
+            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (chip.key !== "pending_instalments" || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
+              <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
+            </Tooltip>)}
+            {foreignCurrencies.map(currency => <Tooltip key={currency} title={state.rates[currency] ? `Exchange rate ${currency}` : `Exchange rate ${currency} missing: set it to see the totals`}>
+              <Chip
+                size="small"
+                sx={state.rates[currency] ? { background: "#9fa8da" } : undefined}
+                color={state.rates[currency] ? "default" : "error"}
+                disabled={state.editing}
+                onClick={() => openRateModal(currency)}
+                label={state.rates[currency] ? rateFormat(state.rates[currency]) : "?"}
+              />
+            </Tooltip>)}
+          </Box>}
+          subheaderTypographyProps={{ component: "div" }}
+        />
+        <CardActions disableSpacing className="main-actions" sx={{ p: "1rem", pt: 0, flexWrap: "wrap", gap: ".5rem" }}>
+          <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Expense</Button>
+          <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
+          <Button size="small" color="primary" variant="outlined" onClick={() => openTransferModal()}>Transfer</Button>
           <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
-          <Button size="small" color="secondary" variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
-          <Button size="small" color="secondary" variant="contained" onClick={() => changeDate(true)} disabled={state.editing}>next</Button>
-          <Button size="small" color="error" variant="contained" onClick={logout}>Logout</Button>
         </CardActions>
         <CardContent sx={{ width: "calc(100% - 2rem)", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
           <ExpensesTable
             state={state}
             setState={setState}
             openModal={openModal}
+            openIncomeModal={openIncomeModal}
+            openTransferModal={openTransferModal}
           />
         </CardContent>
-        {/* <CardHeader subheader={`Incomes: ${formatNumber((state.sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0)).toFixed(2), "$")}`} /> */}
-        {/* <CardActions sx={{ p: "1rem", pt: 0 }}>
-          <Button variant="contained" onClick={() => null}>Add</Button>
-        </CardActions>
-        <CardContent>
-          {state.sources.map(source => source.incomes_count > 0 && <>
-            <h3>{source.name}</h3>
-            <ul>
-              {source.incomes.map(income => <li>
-                {income.date} - {formatNumber(income.amount.toFixed(2), "$")} - {income.description}
-              </li>)}
-            </ul>
-          </>)}
-        </CardContent> */}
       </Card>
     </Box>
   </>
