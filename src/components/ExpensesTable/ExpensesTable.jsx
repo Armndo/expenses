@@ -5,6 +5,7 @@ import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
 
 const INCOME_BG = "#c8e6c9"
 const OWED_BG = "#ffcdd2"
+const BALANCE_BG = "#bbdefb"   // the same as the Balance chip of the month summary
 const TRANSFER_BG = "#ffe0b2"   // the same as the transfer rows (td.transfer)
 
 /** The amounts of a source in the header, left out when they are 0 (to the cent), separated by a dot. */
@@ -28,7 +29,7 @@ function SourceChips({ source, rates }) {
     card && { title: "Paid", sx: { background: TRANSFER_BG }, value: paid },
     source.balance != null && {
       title: card ? "Owed" : "Balance",
-      sx: card ? { background: OWED_BG } : { background: "transparent", border: "1px solid #c0c0c0" },
+      sx: { background: card ? OWED_BG : BALANCE_BG },
       value: card ? -source.balance : source.balance,
       equivalent: true,
     },

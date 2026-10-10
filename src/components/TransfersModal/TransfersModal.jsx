@@ -88,6 +88,19 @@ export function TransfersModal({ state, setState }) {
     }))
   }
 
+  /**
+   * The origin of a transfer is a debit account (a card does not send money; paying one is a transfer from an
+   * account to it), while the destination can be any source. An existing transfer keeps its current origin in
+   * the list even when it is a card, so it can still be shown and edited.
+   */
+  function optionsFor(field) {
+    if (field !== "from_source_id") {
+      return state.sources
+    }
+
+    return state.sources.filter(source => source.kind !== "card" || source.id === state.transfer?.from_source_id)
+  }
+
   function sourceSelect(field, label, labelId) {
     return (
       <FormControl fullWidth>
@@ -103,7 +116,7 @@ export function TransfersModal({ state, setState }) {
             <CreditCardTwoTone />
           </InputAdornment>}
         >
-          {state.sources.map(source => <MenuItem key={`${field}_${source.id}`} value={source.id}>{source.name}</MenuItem>)}
+          {optionsFor(field).map(source => <MenuItem key={`${field}_${source.id}`} value={source.id}>{source.name}</MenuItem>)}
         </Select>
       </FormControl>
     )

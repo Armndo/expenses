@@ -9,3 +9,4 @@ export { currencySymbol } from "./currencySymbol"
 export { visibleSources } from "./visibleSources"
 
 export { monthlyShare } from "./monthlyShare"
+export { rateFormat } from "./rateFormat"

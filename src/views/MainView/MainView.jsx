@@ -2,7 +2,7 @@ import { api_url } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { numberFormat, standardDate } from "@/utils/functions"
+import { numberFormat, rateFormat, standardDate } from "@/utils/functions"
 import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, TransfersModal } from "@/components"
 import "./MainView.css"
 import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
@@ -261,11 +261,11 @@ export function MainView({ }) {
             {foreignCurrencies.map(currency => <Tooltip key={currency} title={state.rates[currency] ? `Exchange rate ${currency}` : `Exchange rate ${currency} missing: set it to see the totals`}>
               <Chip
                 size="small"
-                variant="outlined"
+                sx={state.rates[currency] ? { background: "#9fa8da" } : undefined}
                 color={state.rates[currency] ? "default" : "error"}
                 disabled={state.editing}
                 onClick={() => openRateModal(currency)}
-                label={state.rates[currency] ? numberFormat(state.rates[currency], 2, "$") : "?"}
+                label={state.rates[currency] ? rateFormat(state.rates[currency]) : "?"}
               />
             </Tooltip>)}
           </Box>}
