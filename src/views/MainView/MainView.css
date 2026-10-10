@@ -16,6 +16,14 @@ td.instalment {
   background: #bdbaff;
 }
 
+td.income {
+  background: #c8e6c9;
+}
+
+td.transfer {
+  background: #ffe0b2;
+}
+
 .expenses-modal {
   background: #ffffff59;
   position: absolute;
@@ -100,13 +108,69 @@ td {
   border-radius: 1rem;
 }
 
+/* The name of a source with, next to it, the chip of a card that is paid up. */
+.source-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+/* The chips of a source stay on one line (the column grows to fit them); on a phone each source takes the
+   whole width and they wrap instead. */
+.source-chips {
+  white-space: nowrap;
+}
+
 @media only screen and (max-width: 600px) and (orientation: portrait) {
+  /* The chips wrap on their own with a gap, so the dots (they would be left hanging at the end of a line) go. */
+  .source-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .25rem;
+  }
+
+  .source-chips .chip-dot {
+    display: none;
+  }
+
+  /* Tighter chips in the summary row so that its four totals and the exchange rate fit in one line. */
+  .summary-chips {
+    gap: .25rem !important;
+  }
+
+  .summary-chips .MuiChip-root {
+    font-size: .7rem;
+  }
+
+  .summary-chips .MuiChip-label {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  /* One line for the buttons, and the same width in simple and advanced mode. */
+  .main-actions {
+    flex-wrap: nowrap !important;
+    gap: .25rem !important;
+  }
+
+  .main-actions > button {
+    min-width: 0;
+    padding: 4px 6px;
+    font-size: .7rem;
+    flex: 1 1 auto;
+  }
+
   th > div {
     width: calc(100vw - 6rem) !important;
   }
 
   div.expenses-card {
-    max-height: calc(100vh - 6rem) !important;
+    /* max-height: calc(100dvh - 3rem) !important; */
+    max-height: 100dvh !important;
+    /* background: red !important; */
   }
 
   td {
@@ -115,10 +179,12 @@ td {
 
   .expenses-table-container {
     max-height: calc(100vh - 16rem) !important;
+    /* background: green !important; */
   }
 
   .expenses-modal > div {
     width: calc(100vw - 6rem);
+    /* background: cyan !important; */
   }
 
   .overview-modal > div {
