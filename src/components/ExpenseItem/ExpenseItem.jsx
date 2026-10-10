@@ -18,15 +18,16 @@ function monthlyAmount(instalment) {
 
 const RESOURCES = { incomes: "incomes", transfers: "transfers", expenses: "expenses", instalments: "expenses" }
 
-/** The description of a transfer says where it goes or comes from. */
+/** A transfer shows an arrow (out or in) and its description; the other account is not shown. */
 function describe(item, target) {
   if (target !== "transfers") {
     return item?.description ?? "-"
   }
 
-  const end = `${item.direction === "out" ? "→" : "←"} ${item.counterpart_name}`
+  const arrow = item.direction === "out" ? "→" : "←"
 
-  return item.description ? `${end} · ${item.description}` : end
+  // A non-breaking space keeps the arrow with the first word of the description.
+  return item.description ? `${arrow}\u00A0${item.description}` : arrow
 }
 
 function ShownItem({ categories, setState, item, source, target = "expenses", className = null, openModal = () => null }) {
@@ -97,9 +98,9 @@ function SimpleItem({ categories, className, item, target = "expenses" }) {
   )
 }
 
-/** Rows go incomes first, then transfers, cash expenses and instalments; `rows` has the height of each group. */
+/** Rows go transfers first, then cash expenses, instalments and incomes; `rows` has the height of each group. */
 export function ExpenseItem({ index, rows, state, setState, openModal, openIncomeModal, openTransferModal, categories }) {
-  const groups = ["incomes", "transfers", "expenses", "instalments"]
+  const groups = ["transfers", "expenses", "instalments", "incomes"]
   let position = index
   let group = groups[0]
 
