@@ -17,6 +17,7 @@ const SUMMARY_CHIPS = [
   { key: "spent", title: "Spent", sx: { background: "#c0c0c0" } },
   { key: "cash", title: "Debit", sx: { background: "#c8e6c9" } },
   { key: "debt", title: "Debt", sx: { background: "#ffcdd2" } },
+  { key: "pending_instalments", title: "Pending instalments", sx: { background: "#bdbaff" } },
   { key: "total_money", title: "Balance", sx: { background: "#bbdefb" } },
 ]
 
@@ -259,7 +260,7 @@ export function MainView({ }) {
           subheader={<Box className="summary-chips" sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem", mt: ".5rem" }}>
             {/* The API sends null when there is no value (before the balance start month, or with a missing
                 exchange rate): that chip is left out instead of showing a dash. */}
-            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null).map(chip => <Tooltip key={chip.key} title={chip.title}>
+            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (chip.key !== "pending_instalments" || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
               <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
             </Tooltip>)}
             {foreignCurrencies.map(currency => <Tooltip key={currency} title={state.rates[currency] ? `Exchange rate ${currency}` : `Exchange rate ${currency} missing: set it to see the totals`}>
