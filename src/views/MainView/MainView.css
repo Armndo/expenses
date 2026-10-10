@@ -16,6 +16,10 @@ td.instalment {
   background: #bdbaff;
 }
 
+td.income {
+  background: #c8e6c9;
+}
+
 .expenses-modal {
   background: #ffffff59;
   position: absolute;
@@ -106,7 +110,9 @@ td {
   }
 
   div.expenses-card {
-    max-height: calc(100vh - 6rem) !important;
+    /* max-height: calc(100dvh - 3rem) !important; */
+    max-height: 100dvh !important;
+    /* background: red !important; */
   }
 
   td {
@@ -115,10 +121,12 @@ td {
 
   .expenses-table-container {
     max-height: calc(100vh - 16rem) !important;
+    /* background: green !important; */
   }
 
   .expenses-modal > div {
     width: calc(100vw - 6rem);
+    /* background: cyan !important; */
   }
 
   .overview-modal > div {

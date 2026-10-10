@@ -2,8 +2,8 @@ import { api_url } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { formatNumber, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable } from "@/components"
+import { numberFormat, standardDate } from "@/utils/functions"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal } from "@/components"
 import "./MainView.css"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 
@@ -15,9 +15,12 @@ export function MainView({ }) {
     overview: false,
     byAmount: localStorage.getItem("byAmount") === "true",
     expense: null,
+    incomeModal: false,
+    income: null,
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
     sources: [],
+    summary: null,
     lastSource: +localStorage.getItem("lastSource"),
     categories: [],
     lastCategory: +localStorage.getItem("lastCategory"),
@@ -48,6 +51,7 @@ export function MainView({ }) {
       date,
       sources: res.data.expenses,
       categories: res.data.categories,
+      summary: res.data.summary ?? null,
     })))
     .catch(err => {
       if (err?.status === 401) {
@@ -125,8 +129,23 @@ export function MainView({ }) {
         amount: null,
         description: null,
         instalments: null,
+        next: false,
         source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
         ...expense,
+      },
+    }))
+  }
+
+  function openIncomeModal(income = {}) {
+    setState(prev => ({
+      ...prev,
+      incomeModal: true,
+      income: {
+        date: standardDate(),
+        amount: null,
+        description: null,
+        source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
+        ...income,
       },
     }))
   }
@@ -163,14 +182,22 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      <IncomesModal
+        state={state}
+        setState={setState}
+      />
       <OverviewModal
         state={state}
         setState={setState}
       />
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
-        <CardHeader title={currentDate(state.date)} subheader={`Spent: ${formatNumber((state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)).toFixed(2), "$")}`} />
+        <CardHeader
+          title={currentDate(state.date)}
+          subheader={`Spent: ${numberFormat(state.summary?.spent ?? 0, 2, "$")} · Income: ${numberFormat(state.summary?.income ?? 0, 2, "$")} · Balance: ${state.summary?.total_money != null ? numberFormat(state.summary.total_money, 2, "$") : "-"}`}
+        />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
-          <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Add</Button>
+          <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Expense</Button>
+          <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
           <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
           <Button size="small" color="secondary" variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
@@ -182,22 +209,9 @@ export function MainView({ }) {
             state={state}
             setState={setState}
             openModal={openModal}
+            openIncomeModal={openIncomeModal}
           />
         </CardContent>
-        {/* <CardHeader subheader={`Incomes: ${formatNumber((state.sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0)).toFixed(2), "$")}`} /> */}
-        {/* <CardActions sx={{ p: "1rem", pt: 0 }}>
-          <Button variant="contained" onClick={() => null}>Add</Button>
-        </CardActions>
-        <CardContent>
-          {state.sources.map(source => source.incomes_count > 0 && <>
-            <h3>{source.name}</h3>
-            <ul>
-              {source.incomes.map(income => <li>
-                {income.date} - {formatNumber(income.amount.toFixed(2), "$")} - {income.description}
-              </li>)}
-            </ul>
-          </>)}
-        </CardContent> */}
       </Card>
     </Box>
   </>
