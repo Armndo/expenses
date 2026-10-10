@@ -7,23 +7,6 @@ import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal } from "@/com
 import "./MainView.css"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 
-/** Cash expenses plus the monthly share of the instalments. */
-function spentOf(sources) {
-  return sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0)
-    + sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0)
-}
-
-function incomeOf(sources) {
-  return sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0)
-}
-
-/** First days of the month before `date` ("YYYY-MM-DD", or the current month when null). */
-function previousMonth(date) {
-  const [year, month] = date ? date.split("-").map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1]
-
-  return standardDate(new Date(year, month - 2, 2))
-}
-
 export function MainView({ }) {
   const [state, setState] = useState({
     loading: true,
@@ -37,7 +20,7 @@ export function MainView({ }) {
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
     sources: [],
-    previousSpent: 0,
+    summary: null,
     lastSource: +localStorage.getItem("lastSource"),
     categories: [],
     lastCategory: +localStorage.getItem("lastCategory"),
@@ -52,29 +35,23 @@ export function MainView({ }) {
 
     setState(prev => ({ ...prev, loading: true }))
 
-    const request = month => axios.get(
+    axios.get(
       `${api_url}/data`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         params: {
-          date: month,
+          date,
         }
       }
     )
-
-    // The previous month is what gets paid this month; if it fails the month still loads.
-    Promise.all([
-      request(date),
-      request(previousMonth(date)).catch(() => null),
-    ])
-    .then(([res, previous]) => setState(prev => ({
+    .then(res => setState(prev => ({
       ...prev,
       date,
       sources: res.data.expenses,
       categories: res.data.categories,
-      previousSpent: previous ? spentOf(previous.data.expenses) : 0,
+      summary: res.data.summary ?? null,
     })))
     .catch(err => {
       if (err?.status === 401) {
@@ -216,7 +193,7 @@ export function MainView({ }) {
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={currentDate(state.date)}
-          subheader={`Spent: ${numberFormat(spentOf(state.sources), 2, "$")} · Income: ${numberFormat(incomeOf(state.sources), 2, "$")} · Total money: ${numberFormat(incomeOf(state.sources) - state.previousSpent, 2, "$")}`}
+          subheader={`Spent: ${numberFormat(state.summary?.spent ?? 0, 2, "$")} · Income: ${numberFormat(state.summary?.income ?? 0, 2, "$")} · Total money: ${state.summary?.total_money != null ? numberFormat(state.summary.total_money, 2, "$") : "-"}`}
         />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Expense</Button>
