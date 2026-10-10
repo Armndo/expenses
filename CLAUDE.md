@@ -11,7 +11,7 @@ React 19 + Vite SPA (plain JS/JSX, no TypeScript) for the personal expense track
 - **Dev server**: `npm run dev` (`npm run host` exposes it on the LAN)
 - **Lint**: `npm run lint` (ESLint 9 flat config)
 - **Build / preview**: `npm run build`, `npm run preview` (output in `dist/`)
-- **Deploy**: `npm run deploy` runs `scripts/deploy.sh`: reads `.env` (`SSH_HOST`, `SSH_USER`, `SSH_BUILD`, `SSH_DIR`), prompts for confirmation, builds, zips `dist/`, then wipes the remote dir over SSH and uploads the new build. It is destructive on the remote; don't run it unasked.
+- **Deploy**: `npm run deploy` (or `npm run deploy -- sta`) runs `scripts/deploy.sh`: asks for the environment (`dev`, `sta`, `pro`) and reads its settings from `.env`: `SSH_HOST`, `SSH_USER`, `SSH_BUILD`, and two templates, `SSH_DIR` (e.g. `/var/www/expenses.armn.do/{env}/client`) and `API_URL` (e.g. `https://expenses-api{.env}.armn.do`), where `{env}` becomes `dev`/`sta`/`pro` and `{.env}` becomes `.dev`/`.sta`/nothing in production. A prefix overrides any of them for one environment (`STA_SSH_DIR`, `PRO_API_URL`, `DEV_SSH_HOST`); a `SSH_DIR` or `API_URL` with no mark is refused so an environment never gets another one's value. `VITE_API_URL` stays for `npm run dev` only. It shows the resolved settings, asks for confirmation (production asks to type `pro`), builds locally with that `API_URL` (the server cannot build), zips `dist/`, then wipes the remote dir over SSH and uploads the new build. It refuses `/` or `~` as the remote dir. `DRY_RUN=1` only prints the commands. It is destructive on the remote; don't run it unasked.
 - There is no test runner configured.
 
 `app.yaml` is a leftover App Engine static-hosting config (nodejs20, SPA fallback to `dist/index.html`).
