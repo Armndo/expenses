@@ -115,8 +115,29 @@ td {
 }
 
 @media only screen and (max-width: 600px) and (orientation: portrait) {
+  /* The chips wrap on their own with a gap, so the dots (they would be left hanging at the end of a line) go. */
   .source-chips {
-    white-space: normal;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .25rem;
+  }
+
+  .source-chips .chip-dot {
+    display: none;
+  }
+
+  /* One line for the buttons, and the same width in simple and advanced mode. */
+  .main-actions {
+    flex-wrap: nowrap !important;
+    gap: .25rem !important;
+  }
+
+  .main-actions > button {
+    min-width: 0;
+    padding: 4px 6px;
+    font-size: .7rem;
+    flex: 1 1 auto;
   }
 
   th > div {

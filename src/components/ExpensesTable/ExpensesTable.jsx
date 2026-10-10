@@ -29,7 +29,7 @@ function SourceChips({ source }) {
   ].filter(chip => chip && Math.abs(chip.value) >= 0.005)
 
   return chips.map((chip, index) => <Fragment key={chip.title}>
-    {index > 0 && " · "}
+    {index > 0 && <span className="chip-dot"> · </span>}
     <Tooltip title={chip.title}>
       <Chip size="small" sx={chip.sx} label={numberFormat(chip.value, 2, "$")} />
     </Tooltip>

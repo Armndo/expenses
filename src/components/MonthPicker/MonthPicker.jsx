@@ -30,7 +30,7 @@ export function MonthPicker({ year, month, onSelect, disabled = false }) {
       disabled={disabled}
       onClick={open}
       endIcon={<ArrowDropDown />}
-      sx={{ fontSize: "1.5rem", fontWeight: 400, textTransform: "none", lineHeight: 1.3, px: 1 }}
+      sx={{ fontSize: { xs: "1.2rem", sm: "1.5rem" }, fontWeight: 400, textTransform: "none", lineHeight: 1.3, px: 1 }}
     >
       {MONTHS[month]} {year}
     </Button>
