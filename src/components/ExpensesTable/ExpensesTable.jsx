@@ -41,7 +41,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal }) {
                         label={numberFormat(source.incomes.reduce((a, b) => a + b.amount, 0), 2, "$")}
                       />
                     </Tooltip>
-                    {" | "}
+                    {" · "}
                   </>}
                   <Tooltip title="De contado">
                     <Chip

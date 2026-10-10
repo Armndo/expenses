@@ -193,7 +193,7 @@ export function MainView({ }) {
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={currentDate(state.date)}
-          subheader={`Spent: ${numberFormat(state.summary?.spent ?? 0, 2, "$")} · Income: ${numberFormat(state.summary?.income ?? 0, 2, "$")} · Total money: ${state.summary?.total_money != null ? numberFormat(state.summary.total_money, 2, "$") : "-"}`}
+          subheader={`Spent: ${numberFormat(state.summary?.spent ?? 0, 2, "$")} · Income: ${numberFormat(state.summary?.income ?? 0, 2, "$")} · Balance: ${state.summary?.total_money != null ? numberFormat(state.summary.total_money, 2, "$") : "-"}`}
         />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Expense</Button>
