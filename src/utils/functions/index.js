@@ -6,3 +6,5 @@ export { standardDate } from "./standardDate"
 export { foregroundColor } from "./foregroundColor"
 export { numberFormat } from "./numberFormat"
 export { visibleSources } from "./visibleSources"
+
+export { monthlyShare } from "./monthlyShare"

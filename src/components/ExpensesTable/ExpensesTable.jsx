@@ -1,5 +1,5 @@
 import { ExpenseItem } from "@/components"
-import { numberFormat, visibleSources } from "@/utils/functions"
+import { monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 const INCOME_BG = "#c8e6c9"
@@ -57,7 +57,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
                     <Chip
                       size="small"
                       sx={{ background: "#bdbaff" }}
-                      label={numberFormat(source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0), 2, "$")}
+                      label={numberFormat(source.instalments.reduce((a, b) => a + monthlyShare(b), 0), 2, "$")}
                     />
                   </Tooltip>
                   {" · "}
@@ -65,7 +65,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
                     <Chip
                       size="small"
                       sx={{ background: "#c0c0c0" }}
-                      label={numberFormat((source.expenses.reduce((a, b) => a + b.amount, 0) + source.instalments.reduce((a, b) => a + b.amount / b.instalments, 0)), 2, "$")}
+                      label={numberFormat((source.expenses.reduce((a, b) => a + b.amount, 0) + source.instalments.reduce((a, b) => a + monthlyShare(b), 0)), 2, "$")}
                     />
                   </Tooltip>
                   {source.balance != null && <>

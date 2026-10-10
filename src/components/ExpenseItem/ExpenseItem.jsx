@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { formatDate, numberFormat, visibleSources } from "@/utils/functions"
+import { formatDate, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
 import axios from "axios"
 
@@ -13,11 +13,7 @@ function monthlyAmount(instalment) {
     return instalment.signed_amount.toFixed(2)
   }
 
-  if (!instalment.instalments) {
-    return instalment.amount.toFixed(2)
-  }
-
-  return (instalment.amount / instalment.instalments).toFixed(2)
+  return monthlyShare(instalment).toFixed(2)
 }
 
 const RESOURCES = { incomes: "incomes", transfers: "transfers", expenses: "expenses", instalments: "expenses" }
