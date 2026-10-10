@@ -1,4 +1,5 @@
 import { api_url } from "@/env"
+import { currencySymbol, numberFormat } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CreditCardTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
@@ -6,6 +7,15 @@ import { useNavigate } from "react-router-dom"
 
 export function TransfersModal({ state, setState }) {
   const navigate = useNavigate()
+  const from = state.sources.find(source => source.id === state.transfer?.from_source_id)
+  const to = state.sources.find(source => source.id === state.transfer?.to_source_id)
+  // Between currencies the amount that arrives is asked for; within one it is the same as the amount sent.
+  const crosses = !!from && !!to && from.currency !== to.currency
+  // The currency that is not pesos, and what one unit of it is worth according to the two amounts.
+  const foreign = crosses ? (from.currency === "MXN" ? to.currency : from.currency) : null
+  const impliedRate = crosses && +state.transfer.amount > 0 && +state.transfer.received_amount > 0
+    ? (from.currency === "MXN" ? +state.transfer.amount / +state.transfer.received_amount : +state.transfer.received_amount / +state.transfer.amount)
+    : null
 
   function save() {
     const transfer = { ...state.transfer }
@@ -26,6 +36,17 @@ export function TransfersModal({ state, setState }) {
     }
 
     transfer.amount = +transfer.amount
+
+    if (crosses) {
+      if (transfer.received_amount === null || transfer.received_amount === undefined || isNaN(transfer.received_amount) || +transfer.received_amount <= 0) {
+        alert("Incorrect 'Received' format.")
+        return
+      }
+
+      transfer.received_amount = +transfer.received_amount
+    } else {
+      transfer.received_amount = null
+    }
 
     setState(prev => ({
       ...prev,
@@ -115,7 +136,7 @@ export function TransfersModal({ state, setState }) {
             <TextField
               required
               sx={{ width: "100%", mb: "1rem" }}
-              label="Amount"
+              label={from && from.currency !== "MXN" ? `Amount sent (${from.currency})` : "Amount"}
               type="number"
               placeholder={"0.01"}
               value={state.transfer?.amount ?? ""}
@@ -131,6 +152,28 @@ export function TransfersModal({ state, setState }) {
                 }
               }}
             />
+            {crosses && <TextField
+              required
+              sx={{ width: "100%", mb: "1rem" }}
+              label={`Received (${to.currency})`}
+              type="number"
+              placeholder={"0.01"}
+              value={state.transfer?.received_amount ?? ""}
+              onChange={e => editTransfer("received_amount", e.target.value)}
+              helperText={impliedRate
+                ? `1 ${foreign} = ${numberFormat(impliedRate, 4, "$")}${state.rates?.[foreign] ? ` (rate ${numberFormat(state.rates[foreign], 4, "$")})` : ""}`
+                : `What arrives in ${to.name}, in ${to.currency} (${currencySymbol(to.currency)}).`}
+              slotProps={{
+                input: {
+                  startAdornment: <InputAdornment sx={{ mr: 1 }}>
+                    <AttachMoneyTwoTone />
+                  </InputAdornment>
+                },
+                htmlInput: {
+                  step: 0.01,
+                }
+              }}
+            />}
             <TextField
               sx={{ width: "100%" }}
               label="Description"
