@@ -22,9 +22,9 @@ Routes are defined in `src/App.jsx`: `""` → `MainView`, `login` → `LoginView
 
 - **No global state or shared API client.** `MainView` owns one big `state` object and passes it down; each component that mutates data calls axios itself with `${api_url}` and `Authorization: Bearer ${localStorage.getItem("token")}`, and on failure removes the token. Preserve that pattern or refactor deliberately.
 - `MainView` fetches `GET /data?date=...` and fills `state.sources` / `state.categories`. After create/update/delete, components re-fetch rather than patch local state.
-- `ExpensesTable` + `ExpenseItem` render a grid with one column per source; rows are indexed across `source.expenses` first and then `source.instalments` (using an `offset`), so the two lists must stay in that order and shape.
+- `ExpensesTable` + `ExpenseItem` render a grid with one column per source; rows go incomes first (green, `td.income`), then `source.expenses`, then `source.instalments` (lilac). `ExpensesTable` computes the height of each group (`rows`) and `ExpenseItem` maps a row index to a group and a position, so the lists must stay in that order and shape. `visibleSources` (`@/utils/functions`) picks the sources shown: any with incomes, expenses or instalments.
 - `ExpensesModal` is the create/edit form (fields include `next` "Billed next period?" and `instalments`, which must be empty or an integer ≥ 2).
-- `IncomesModal` + `IncomesSection` handle incomes (source, date, amount ≠ 0, description): `IncomesSection` renders the "Income" total and a table per source below the expenses table, with edit/delete; `MainView` keeps `incomeModal`/`income` in state and `openIncomeModal`. They call `POST|PUT|DELETE /incomes`. "Spent" stays expenses only.
+- `IncomesModal` is the create/edit form for incomes (source, date, amount ≠ 0, description), opened by the Income button or a green row's ✎; `MainView` keeps `incomeModal`/`income` in state and `openIncomeModal`. Delete is the row's ⌫. They call `POST|PUT|DELETE /incomes`. "Spent" stays expenses only; the subheader adds the income total.
 - Per-user UI preferences and last selections live in `localStorage`: `token`, `date`, `byAmount`, `simple`, `lastSource`, `lastCategory`.
 - Instalment amounts are shown as `amount / instalments`; this mirrors the API's category sums.
 
