@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { formatDate, numberFormat, visibleSources } from "@/utils/functions"
+import { formatDate, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
 import axios from "axios"
 
@@ -8,11 +8,26 @@ function monthlyAmount(instalment) {
     return null
   }
 
-  if (!instalment.instalments) {
-    return instalment.amount.toFixed(2)
+  // A transfer shows what it means for this source: negative when it leaves, positive when it arrives.
+  if (instalment.signed_amount !== undefined) {
+    return instalment.signed_amount.toFixed(2)
   }
 
-  return (instalment.amount / instalment.instalments).toFixed(2)
+  return monthlyShare(instalment).toFixed(2)
+}
+
+const RESOURCES = { incomes: "incomes", transfers: "transfers", expenses: "expenses", instalments: "expenses" }
+
+/** A transfer shows an arrow (out or in) and its description; the other account is not shown. */
+function describe(item, target) {
+  if (target !== "transfers") {
+    return item?.description ?? "-"
+  }
+
+  const arrow = item.direction === "out" ? "→" : "←"
+
+  // A non-breaking space keeps the arrow with the first word of the description.
+  return item.description ? `${arrow}\u00A0${item.description}` : arrow
 }
 
 function ShownItem({ categories, setState, item, source, target = "expenses", className = null, openModal = () => null }) {
@@ -27,7 +42,7 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
     }))
 
     axios.delete(
-      `${api_url}/${target === "incomes" ? "incomes" : "expenses"}/${item.id}`,
+      `${api_url}/${RESOURCES[target]}/${item.id}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -49,9 +64,9 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
       <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
-      {/* Incomes have no category: the description takes its column too. */}
-      {target === "incomes" ?
-        <TableCell className={className} colSpan={2}>{item?.description ?? "-"}</TableCell> :
+      {/* Incomes and transfers have no category: the description takes its column too. */}
+      {target === "incomes" || target === "transfers" ?
+        <TableCell className={className} colSpan={2}>{describe(item, target)}</TableCell> :
         <>
           <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
           <TableCell className={className}>{item?.description ?? "-"}</TableCell>
@@ -59,7 +74,7 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
       }
       <TableCell className={className}>
         <ButtonGroup size="small">
-          <Button variant="contained" color="warning" onClick={() => openModal({ ...item, source_id: source.id })}>✎</Button>
+          <Button variant="contained" color="warning" onClick={() => openModal(target === "transfers" ? item : { ...item, source_id: source.id })}>✎</Button>
           <Button variant="contained" color="error" onClick={destroy}>⌫</Button>
         </ButtonGroup>
       </TableCell>
@@ -72,8 +87,8 @@ function SimpleItem({ categories, className, item, target = "expenses" }) {
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
       <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
-      {target === "incomes" ?
-        <TableCell className={className} colSpan={2}>{item?.description ?? "-"}</TableCell> :
+      {target === "incomes" || target === "transfers" ?
+        <TableCell className={className} colSpan={2}>{item ? describe(item, target) : "-"}</TableCell> :
         <>
           <TableCell className={className}>{categories[item?.category_id] ?? "-"}</TableCell>
           <TableCell className={className}>{item?.description ?? "-"}</TableCell>
@@ -83,11 +98,22 @@ function SimpleItem({ categories, className, item, target = "expenses" }) {
   )
 }
 
-/** Rows go incomes first, then cash expenses, then instalments; `rows` has the height of each group. */
-export function ExpenseItem({ index, rows, state, setState, openModal, openIncomeModal, categories }) {
-  const group = index < rows.incomes ? "incomes" : index < rows.incomes + rows.expenses ? "expenses" : "instalments"
-  const position = index - (group === "incomes" ? 0 : rows.incomes + (group === "expenses" ? 0 : rows.expenses))
-  const className = group === "incomes" ? "income" : group === "instalments" ? "instalment" : null
+/** Rows go transfers first, then cash expenses, instalments and incomes; `rows` has the height of each group. */
+export function ExpenseItem({ index, rows, state, setState, openModal, openIncomeModal, openTransferModal, categories }) {
+  const groups = ["transfers", "expenses", "instalments", "incomes"]
+  let position = index
+  let group = groups[0]
+
+  for (const name of groups) {
+    group = name
+
+    if (position < rows[name]) break
+
+    position -= rows[name]
+  }
+
+  const className = { incomes: "income", transfers: "transfer", expenses: null, instalments: "instalment" }[group]
+  const open = { incomes: openIncomeModal, transfers: openTransferModal, expenses: openModal, instalments: openModal }[group]
 
   return (
     <TableRow key={`row_${index}`}>
@@ -110,7 +136,7 @@ export function ExpenseItem({ index, rows, state, setState, openModal, openIncom
           target={group}
           className={className}
           item={item}
-          openModal={group === "incomes" ? openIncomeModal : openModal}
+          openModal={open}
         />
 
         return Array(5).fill(null).map((_, i) => <TableCell key={`r${index}esp_${i}`} className={className}>-</TableCell>)
