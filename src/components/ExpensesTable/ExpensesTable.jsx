@@ -1,10 +1,12 @@
 import { ExpenseItem } from "@/components"
-import { currencySymbol, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
+import { currencySymbol, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Fragment } from "react"
 import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 const INCOME_BG = "#c8e6c9"
 const OWED_BG = "#ffcdd2"
+const PAID_BG = "#c5e1a5"      // an acid, light green next to the green of the incomes
+const UNPAID_BG = "#ef9a9a"    // a light red, stronger than the pink of Owed
 const BALANCE_BG = "#bbdefb"   // the same as the Balance chip of the month summary
 const TRANSFER_BG = "#ffe0b2"   // the same as the transfer rows (td.transfer)
 
@@ -72,7 +74,15 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
                 key={source.name}
               >
                 <div>
-                  <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
+                  <div className="source-title">
+                    <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
+                    {lastMonthPaid(source) === true && <Tooltip title="No debt left from earlier periods">
+                      <Chip size="small" sx={{ background: PAID_BG, fontWeight: 400 }} label="Last month paid" />
+                    </Tooltip>}
+                    {lastMonthPaid(source) === false && <Tooltip title="Debt left from earlier periods">
+                      <Chip size="small" sx={{ background: UNPAID_BG, fontWeight: 400 }} label="Last month not paid" />
+                    </Tooltip>}
+                  </div>
                   <div className="source-chips">
                     <SourceChips source={source} rates={state.rates} />
                   </div>

@@ -10,3 +10,4 @@ export { visibleSources } from "./visibleSources"
 
 export { monthlyShare } from "./monthlyShare"
 export { rateFormat } from "./rateFormat"
+export { lastMonthPaid } from "./lastMonthPaid"

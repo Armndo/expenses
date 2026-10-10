@@ -108,6 +108,14 @@ td {
   border-radius: 1rem;
 }
 
+/* The name of a source with, next to it, the chip of a card that is paid up. */
+.source-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+}
+
 /* The chips of a source stay on one line (the column grows to fit them); on a phone each source takes the
    whole width and they wrap instead. */
 .source-chips {
