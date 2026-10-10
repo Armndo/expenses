@@ -3,7 +3,7 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { numberFormat, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, IncomesSection } from "@/components"
 import "./MainView.css"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 
@@ -15,6 +15,8 @@ export function MainView({ }) {
     overview: false,
     byAmount: localStorage.getItem("byAmount") === "true",
     expense: null,
+    incomeModal: false,
+    income: null,
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
     sources: [],
@@ -132,6 +134,20 @@ export function MainView({ }) {
     }))
   }
 
+  function openIncomeModal(income = {}) {
+    setState(prev => ({
+      ...prev,
+      incomeModal: true,
+      income: {
+        date: standardDate(),
+        amount: null,
+        description: null,
+        source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
+        ...income,
+      },
+    }))
+  }
+
   function openOverview() {
     setState(prev => ({
       ...prev,
@@ -164,6 +180,10 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      <IncomesModal
+        state={state}
+        setState={setState}
+      />
       <OverviewModal
         state={state}
         setState={setState}
@@ -188,20 +208,11 @@ export function MainView({ }) {
             openModal={openModal}
           />
         </CardContent>
-        {/* <CardHeader subheader={`Incomes: ${numberFormat(state.sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0), 2, "$")}`} />
-        <CardActions sx={{ p: "1rem", pt: 0 }}>
-          <Button variant="contained" onClick={() => null}>Add</Button>
-        </CardActions>
-        <CardContent>
-          {state.sources.map(source => source.incomes_count > 0 && <>
-            <h3>{source.name}</h3>
-            <ul>
-              {source.incomes.map(income => <li>
-                {income.date} - {numberFormat(income.amount, 2, "$")} - {income.description}
-              </li>)}
-            </ul>
-          </>)}
-        </CardContent> */}
+        <IncomesSection
+          state={state}
+          setState={setState}
+          openIncomeModal={openIncomeModal}
+        />
       </Card>
     </Box>
   </>

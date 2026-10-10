@@ -24,6 +24,7 @@ Routes are defined in `src/App.jsx`: `""` → `MainView`, `login` → `LoginView
 - `MainView` fetches `GET /data?date=...` and fills `state.sources` / `state.categories`. After create/update/delete, components re-fetch rather than patch local state.
 - `ExpensesTable` + `ExpenseItem` render a grid with one column per source; rows are indexed across `source.expenses` first and then `source.instalments` (using an `offset`), so the two lists must stay in that order and shape.
 - `ExpensesModal` is the create/edit form (fields include `next` "Billed next period?" and `instalments`, which must be empty or an integer ≥ 2).
+- `IncomesModal` + `IncomesSection` handle incomes (source, date, amount ≠ 0, description): `IncomesSection` renders the "Income" total and a table per source below the expenses table, with edit/delete; `MainView` keeps `incomeModal`/`income` in state and `openIncomeModal`. They call `POST|PUT|DELETE /incomes`. "Spent" stays expenses only.
 - Per-user UI preferences and last selections live in `localStorage`: `token`, `date`, `byAmount`, `simple`, `lastSource`, `lastCategory`.
 - Instalment amounts are shown as `amount / instalments`; this mirrors the API's category sums.
 
