@@ -219,9 +219,9 @@ export function MainView({ }) {
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={currentDate(state.date)}
-          subheader={`Spent: ${money(state.summary?.spent ?? 0)} · Income: ${money(state.summary?.income ?? 0)} · Debit: ${money(state.summary?.cash)} · Debt: ${money(state.summary?.debt)} · Balance: ${money(state.summary?.total_money)}`}
+          subheader={`Spent: ${money(state.summary?.spent ?? 0)} · Debit: ${money(state.summary?.cash)} · Debt: ${money(state.summary?.debt)} · Balance: ${money(state.summary?.total_money)}`}
         />
-        <CardActions sx={{ p: "1rem", pt: 0 }}>
+        <CardActions disableSpacing sx={{ p: "1rem", pt: 0, flexWrap: "wrap", gap: ".5rem" }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Expense</Button>
           <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
           <Button size="small" color="primary" variant="outlined" onClick={() => openTransferModal()}>Transfer</Button>
