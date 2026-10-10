@@ -98,9 +98,9 @@ function SimpleItem({ categories, className, item, source, target = "expenses" }
   )
 }
 
-/** Rows go transfers first, then cash expenses, instalments and incomes; `rows` has the height of each group. */
+/** Rows go cash expenses, instalments, transfers and incomes; `rows` has the height of each group. */
 export function ExpenseItem({ index, rows, state, setState, openModal, openIncomeModal, openTransferModal, categories }) {
-  const groups = ["transfers", "expenses", "instalments", "incomes"]
+  const groups = ["expenses", "instalments", "transfers", "incomes"]
   let position = index
   let group = groups[0]
 
