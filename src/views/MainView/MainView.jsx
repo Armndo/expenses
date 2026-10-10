@@ -3,9 +3,14 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { numberFormat, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, TransfersModal } from "@/components"
 import "./MainView.css"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
+
+/** `-` when the API has no value (the balance does not exist before its start month). */
+function money(value) {
+  return value != null ? numberFormat(value, 2, "$") : "-"
+}
 
 export function MainView({ }) {
   const [state, setState] = useState({
@@ -17,6 +22,8 @@ export function MainView({ }) {
     expense: null,
     incomeModal: false,
     income: null,
+    transferModal: false,
+    transfer: null,
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
     sources: [],
@@ -150,6 +157,21 @@ export function MainView({ }) {
     }))
   }
 
+  function openTransferModal(transfer = {}) {
+    setState(prev => ({
+      ...prev,
+      transferModal: true,
+      transfer: {
+        date: standardDate(),
+        amount: null,
+        description: null,
+        from_source_id: null,
+        to_source_id: null,
+        ...transfer,
+      },
+    }))
+  }
+
   function openOverview() {
     setState(prev => ({
       ...prev,
@@ -186,6 +208,10 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      <TransfersModal
+        state={state}
+        setState={setState}
+      />
       <OverviewModal
         state={state}
         setState={setState}
@@ -193,11 +219,12 @@ export function MainView({ }) {
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={currentDate(state.date)}
-          subheader={`Spent: ${numberFormat(state.summary?.spent ?? 0, 2, "$")} · Income: ${numberFormat(state.summary?.income ?? 0, 2, "$")} · Balance: ${state.summary?.total_money != null ? numberFormat(state.summary.total_money, 2, "$") : "-"}`}
+          subheader={`Spent: ${money(state.summary?.spent ?? 0)} · Income: ${money(state.summary?.income ?? 0)} · Cash: ${money(state.summary?.cash)} · Debt: ${money(state.summary?.debt)} · Balance: ${money(state.summary?.total_money)}`}
         />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Expense</Button>
           <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
+          <Button size="small" color="primary" variant="outlined" onClick={() => openTransferModal()}>Transfer</Button>
           <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
           <Button size="small" color="secondary" variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
@@ -210,6 +237,7 @@ export function MainView({ }) {
             setState={setState}
             openModal={openModal}
             openIncomeModal={openIncomeModal}
+            openTransferModal={openTransferModal}
           />
         </CardContent>
       </Card>
