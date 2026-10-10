@@ -1,21 +1,30 @@
 import { ExpenseItem } from "@/components"
-import { numberFormat } from "@/utils/functions"
+import { numberFormat, visibleSources } from "@/utils/functions"
 import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
-export function ExpensesTable({ state, setState, openModal }) {
+const INCOME_BG = "#c8e6c9"
+
+export function ExpensesTable({ state, setState, openModal, openIncomeModal }) {
   let categories = {}
 
   for (const category of state?.categories ?? []) {
     categories[category.id] = category.alias
   }
 
+  const sources = visibleSources(state)
+  const rows = {
+    incomes: Math.max(0, ...sources.map(source => source.incomes.length)),
+    expenses: Math.max(0, ...sources.map(source => source.expenses.length)),
+    instalments: Math.max(0, ...sources.map(source => source.instalments.length)),
+  }
+
   return (
-    state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).length > 0 ?
+    sources.length > 0 ?
     <TableContainer className="expenses-table-container" sx={{ maxHeight: "calc(100vh - 12rem)", overflow: "auto" }}>
       <Table size="small" stickyHeader className="expenses_table">
         <TableHead>
           <TableRow>
-            {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map(source => (
+            {sources.map(source => (
               <TableCell
                 colSpan={state.simple ? 4 : 5}
                 align="center"
@@ -24,6 +33,16 @@ export function ExpensesTable({ state, setState, openModal }) {
               >
                 <div>
                   <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
+                  {source.incomes.length > 0 && <>
+                    <Tooltip title="Ingresos">
+                      <Chip
+                        size="small"
+                        sx={{ background: INCOME_BG }}
+                        label={numberFormat(source.incomes.reduce((a, b) => a + b.amount, 0), 2, "$")}
+                      />
+                    </Tooltip>
+                    {" | "}
+                  </>}
                   <Tooltip title="De contado">
                     <Chip
                       size="small"
@@ -53,16 +72,15 @@ export function ExpensesTable({ state, setState, openModal }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {Array(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0) + state.sources.reduce((a, b) => b.instalments_count > a ? b.instalments_count : a, 0))
-          .fill(state.sources.reduce((a, b) => b.expenses_count > a ? b.expenses_count : a, 0))
-          .map((offset, index) => 
+          {Array(rows.incomes + rows.expenses + rows.instalments).fill(null).map((_, index) =>
             <ExpenseItem
               key={index}
               index={index}
-              offset={offset}
+              rows={rows}
               state={state}
               setState={setState}
               openModal={openModal}
+              openIncomeModal={openIncomeModal}
               categories={categories}
             />
           )}

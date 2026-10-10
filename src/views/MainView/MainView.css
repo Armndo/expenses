@@ -16,6 +16,10 @@ td.instalment {
   background: #bdbaff;
 }
 
+td.income {
+  background: #c8e6c9;
+}
+
 .expenses-modal {
   background: #ffffff59;
   position: absolute;

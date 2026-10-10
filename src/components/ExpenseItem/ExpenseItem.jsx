@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { formatDate, numberFormat } from "@/utils/functions"
+import { formatDate, numberFormat, visibleSources } from "@/utils/functions"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
 import axios from "axios"
 
@@ -15,8 +15,8 @@ function monthlyAmount(instalment) {
   return (instalment.amount / instalment.instalments).toFixed(2)
 }
 
-function ShownItem({ categories, setState, item, index, source, offset = 0, target = "expenses", className = null, openModal = () => null }) {
-  function destroy(dsource, index) {
+function ShownItem({ categories, setState, item, source, target = "expenses", className = null, openModal = () => null }) {
+  function destroy() {
     if (!confirm("Delete?")) {
       return
     }
@@ -27,7 +27,7 @@ function ShownItem({ categories, setState, item, index, source, offset = 0, targ
     }))
 
     axios.delete(
-      `${api_url}/expenses/${dsource[target][index - offset].id}`,
+      `${api_url}/${target === "incomes" ? "incomes" : "expenses"}/${item.id}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -54,7 +54,7 @@ function ShownItem({ categories, setState, item, index, source, offset = 0, targ
       <TableCell className={className}>
         <ButtonGroup size="small">
           <Button variant="contained" color="warning" onClick={() => openModal({ ...item, source_id: source.id })}>✎</Button>
-          <Button variant="contained" color="error" onClick={() => destroy(source, index)}>⌫</Button>
+          <Button variant="contained" color="error" onClick={destroy}>⌫</Button>
         </ButtonGroup>
       </TableCell>
     </>
@@ -72,43 +72,36 @@ function SimpleItem({ categories, className, item }) {
   )
 }
 
-export function ExpenseItem({ index, offset, state, setState, openModal, categories }) {
+/** Rows go incomes first, then cash expenses, then instalments; `rows` has the height of each group. */
+export function ExpenseItem({ index, rows, state, setState, openModal, openIncomeModal, categories }) {
+  const group = index < rows.incomes ? "incomes" : index < rows.incomes + rows.expenses ? "expenses" : "instalments"
+  const position = index - (group === "incomes" ? 0 : rows.incomes + (group === "expenses" ? 0 : rows.expenses))
+  const className = group === "incomes" ? "income" : group === "instalments" ? "instalment" : null
+
   return (
     <TableRow key={`row_${index}`}>
-      {state.sources.filter(source => source.expenses.length > 0 || source.instalments.length > 0).map((source, idx) => {
+      {visibleSources(state).map((source, idx) => {
+        const item = source[group]?.[position]
+
         if (state.simple) return <SimpleItem
           key={`r${index}c${idx}`}
           categories={categories}
-          className={`simple ${index >= offset ? "instalment" : ""}`}
-          item={source.expenses?.[index] || source.instalments?.[index - offset]}
+          className={`simple ${className ?? ""}`}
+          item={item}
         />
 
-        if (source.expenses?.[index]) return <ShownItem
+        if (item) return <ShownItem
           key={`r${index}c${idx}`}
           categories={categories}
-          state={state}
-          index={index}
           setState={setState}
           source={source}
-          item={source.expenses[index]}
-          openModal={openModal}
+          target={group}
+          className={className}
+          item={item}
+          openModal={group === "incomes" ? openIncomeModal : openModal}
         />
 
-        if (source.instalments?.[index - offset]) return <ShownItem
-          key={`r${index}c${idx}`}
-          categories={categories}
-          state={state}
-          index={index}
-          setState={setState}
-          source={source}
-          openModal={openModal}
-          className="instalment"
-          offset={offset}
-          target={"instalments"}
-          item={source.instalments[index - offset]}
-        />
-
-        return Array(5).fill(null).map((_, i) => <TableCell key={`r${index}esp_${i}`} className={index >= offset ? "instalment" : ""}>-</TableCell>)
+        return Array(5).fill(null).map((_, i) => <TableCell key={`r${index}esp_${i}`} className={className}>-</TableCell>)
       })}
     </TableRow>
   )

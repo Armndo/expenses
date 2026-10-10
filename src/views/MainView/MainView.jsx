@@ -3,7 +3,7 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { numberFormat, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, IncomesSection } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal } from "@/components"
 import "./MainView.css"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 
@@ -191,10 +191,11 @@ export function MainView({ }) {
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={currentDate(state.date)}
-          subheader={`Spent: ${numberFormat(state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0), 2, "$")}`}
+          subheader={`Spent: ${numberFormat(state.sources.reduce((a, b) => a + b.expenses.reduce((c, d) => c + d.amount, 0), 0) + state.sources.reduce((a, b) => a + b.instalments.reduce((c, d) => c + d.amount / d.instalments, 0), 0), 2, "$")}${state.sources.some(source => source.incomes.length > 0) ? ` · Income: ${numberFormat(state.sources.reduce((a, b) => a + b.incomes.reduce((c, d) => c + d.amount, 0), 0), 2, "$")}` : ""}`}
         />
         <CardActions sx={{ p: "1rem", pt: 0 }}>
           <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Add</Button>
+          <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
           <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
           <Button size="small" color="secondary" variant="contained" onClick={() => changeDate()} disabled={state.editing}>prev</Button>
@@ -206,13 +207,9 @@ export function MainView({ }) {
             state={state}
             setState={setState}
             openModal={openModal}
+            openIncomeModal={openIncomeModal}
           />
         </CardContent>
-        <IncomesSection
-          state={state}
-          setState={setState}
-          openIncomeModal={openIncomeModal}
-        />
       </Card>
     </Box>
   </>
