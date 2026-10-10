@@ -34,7 +34,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal }) {
                 <div>
                   <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
                   {source.incomes.length > 0 && <>
-                    <Tooltip title="Ingresos">
+                    <Tooltip title="Income">
                       <Chip
                         size="small"
                         sx={{ background: INCOME_BG }}
@@ -43,7 +43,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal }) {
                     </Tooltip>
                     {" · "}
                   </>}
-                  <Tooltip title="De contado">
+                  <Tooltip title="In full">
                     <Chip
                       size="small"
                       sx={{ background: "transparent", border: "1px solid #c0c0c0" }}
@@ -51,7 +51,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal }) {
                     />
                   </Tooltip>
                   {" · "}
-                  <Tooltip title="A meses">
+                  <Tooltip title="Instalments">
                     <Chip
                       size="small"
                       sx={{ background: "#bdbaff" }}
