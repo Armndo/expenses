@@ -108,7 +108,17 @@ td {
   border-radius: 1rem;
 }
 
+/* The chips of a source stay on one line (the column grows to fit them); on a phone each source takes the
+   whole width and they wrap instead. */
+.source-chips {
+  white-space: nowrap;
+}
+
 @media only screen and (max-width: 600px) and (orientation: portrait) {
+  .source-chips {
+    white-space: normal;
+  }
+
   th > div {
     width: calc(100vw - 6rem) !important;
   }
