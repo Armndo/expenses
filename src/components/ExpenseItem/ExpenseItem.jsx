@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { formatDate, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
+import { currencySymbol, formatDate, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
 import axios from "axios"
 
@@ -63,7 +63,7 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
   return (
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
-      <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
+      <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, currencySymbol(source.currency))}</TableCell>
       {/* Incomes and transfers have no category: the description takes its column too. */}
       {target === "incomes" || target === "transfers" ?
         <TableCell className={className} colSpan={2}>{describe(item, target)}</TableCell> :
@@ -82,11 +82,11 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
   )
 }
 
-function SimpleItem({ categories, className, item, target = "expenses" }) {
+function SimpleItem({ categories, className, item, source, target = "expenses" }) {
   return (
     <>
       <TableCell className={className}>{formatDate(item?.date)}</TableCell>
-      <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, "$")}</TableCell>
+      <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, currencySymbol(source.currency))}</TableCell>
       {target === "incomes" || target === "transfers" ?
         <TableCell className={className} colSpan={2}>{item ? describe(item, target) : "-"}</TableCell> :
         <>
@@ -126,6 +126,7 @@ export function ExpenseItem({ index, rows, state, setState, openModal, openIncom
           className={`simple ${className ?? ""}`}
           target={group}
           item={item}
+          source={source}
         />
 
         if (item) return <ShownItem

@@ -5,6 +5,7 @@ export { autoRange } from "./autoRange"
 export { standardDate } from "./standardDate"
 export { foregroundColor } from "./foregroundColor"
 export { numberFormat } from "./numberFormat"
+export { currencySymbol } from "./currencySymbol"
 export { visibleSources } from "./visibleSources"
 
 export { monthlyShare } from "./monthlyShare"

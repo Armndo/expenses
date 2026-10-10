@@ -3,19 +3,18 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { numberFormat, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, TransfersModal } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, TransfersModal } from "@/components"
 import "./MainView.css"
 import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Tooltip, Typography } from "@mui/material"
 
-/** `-` when the API has no value (the balance does not exist before its start month). */
 function money(value) {
-  return value != null ? numberFormat(value, 2, "$") : "-"
+  return numberFormat(value, 2, "$")
 }
 
 /** The month totals under the title, from `summary` (the API does the math). */
 const SUMMARY_CHIPS = [
-  { key: "spent", title: "Spent", sx: { background: "#c0c0c0" }, fallback: 0 },
+  { key: "spent", title: "Spent", sx: { background: "#c0c0c0" } },
   { key: "cash", title: "Debit", sx: { background: "#c8e6c9" } },
   { key: "debt", title: "Debt", sx: { background: "#ffcdd2" } },
   { key: "total_money", title: "Balance", sx: { background: "#bbdefb" } },
@@ -37,6 +36,9 @@ export function MainView({ }) {
     date: localStorage.getItem("date"),
     sources: [],
     summary: null,
+    rates: {},
+    rateModal: false,
+    rate: null,
     lastSource: +localStorage.getItem("lastSource"),
     categories: [],
     lastCategory: +localStorage.getItem("lastCategory"),
@@ -68,6 +70,7 @@ export function MainView({ }) {
       sources: res.data.expenses,
       categories: res.data.categories,
       summary: res.data.summary ?? null,
+      rates: res.data.rates ?? {},
     })))
     .catch(err => {
       if (err?.status === 401) {
@@ -179,6 +182,14 @@ export function MainView({ }) {
     }))
   }
 
+  function openRateModal(currency) {
+    setState(prev => ({
+      ...prev,
+      rateModal: true,
+      rate: { currency, rate: prev.rates[currency] ?? null },
+    }))
+  }
+
   function openOverview() {
     setState(prev => ({
       ...prev,
@@ -204,6 +215,9 @@ export function MainView({ }) {
     load()
   }, [])
 
+  // Currencies other than pesos used by a source: each gets a chip with its exchange rate.
+  const foreignCurrencies = [...new Set(state.sources.map(source => source.currency).filter(currency => currency && currency !== "MXN"))]
+
   return <>
     {state.loading && <div className="expenses-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
     <Box sx={{ width: "100vw", height: "fit-content" }}>
@@ -219,6 +233,10 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      <RatesModal
+        state={state}
+        setState={setState}
+      />
       <OverviewModal
         state={state}
         setState={setState}
@@ -226,17 +244,29 @@ export function MainView({ }) {
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={<Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "wrap", gap: { xs: ".25rem", sm: ".5rem" } }}>
-            <Button size="small" color="secondary" variant="contained" aria-label="Previous month" sx={{ minWidth: 0, px: 1 }} onClick={() => changeDate()} disabled={state.editing}><ChevronLeft fontSize="small" /></Button>
+            <Button size="small" color="secondary" variant="contained" aria-label="Previous month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate()} disabled={state.editing}><ChevronLeft fontSize="small" /></Button>
             <MonthPicker {...shownMonth()} onSelect={selectMonth} disabled={state.editing} />
-            <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1 }} onClick={() => changeDate(true)} disabled={state.editing}><ChevronRight fontSize="small" /></Button>
-            <Button size="small" color="error" variant="contained" aria-label="Logout" sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 } }} onClick={logout}>
+            <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate(true)} disabled={state.editing}><ChevronRight fontSize="small" /></Button>
+            <Button size="small" color="error" variant="contained" aria-label="Logout" sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 }, height: 30 }} onClick={logout}>
               <Logout fontSize="small" sx={{ display: { xs: "block", sm: "none" } }} />
               <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Logout</Box>
             </Button>
           </Box>}
           subheader={<Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem", mt: ".5rem" }}>
-            {SUMMARY_CHIPS.map(chip => <Tooltip key={chip.key} title={chip.title}>
-              <Chip size="small" sx={chip.sx} label={money(state.summary?.[chip.key] ?? chip.fallback)} />
+            {/* The API sends null when there is no value (before the balance start month, or with a missing
+                exchange rate): that chip is left out instead of showing a dash. */}
+            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null).map(chip => <Tooltip key={chip.key} title={chip.title}>
+              <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
+            </Tooltip>)}
+            {foreignCurrencies.map(currency => <Tooltip key={currency} title={state.rates[currency] ? `Exchange rate ${currency}` : `Exchange rate ${currency} missing: set it to see the totals`}>
+              <Chip
+                size="small"
+                variant="outlined"
+                color={state.rates[currency] ? "default" : "error"}
+                disabled={state.editing}
+                onClick={() => openRateModal(currency)}
+                label={`${currency} ${state.rates[currency] ? numberFormat(state.rates[currency], 2, "$") : "?"}`}
+              />
             </Tooltip>)}
           </Box>}
           subheaderTypographyProps={{ component: "div" }}
