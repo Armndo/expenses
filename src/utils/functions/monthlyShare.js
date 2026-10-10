@@ -1,11 +1,15 @@
 /**
- * What an expense bills in a month: its amount, or its monthly share when it has instalments, rounded to
- * cents like the bank bills it. The API (sums and balances) and the app round the same way.
+ * What an expense bills in a month: its amount, or its monthly share when it has instalments, in cents
+ * like the bank bills it, halves away from zero. It works on whole cents because dividing floats gives
+ * results like 1200.4649999 for an exact 1200.465, and the API (sums and balances) must round the same way.
  */
 export function monthlyShare(expense) {
   if (!expense.instalments) {
     return expense.amount
   }
 
-  return Math.round((expense.amount / expense.instalments + Number.EPSILON) * 100) / 100
+  const cents = Math.round(expense.amount * 100)
+  const share = Math.round(Math.abs(cents) / expense.instalments)
+
+  return (cents < 0 ? -share : share) / 100
 }
