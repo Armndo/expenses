@@ -1,4 +1,5 @@
 import { api_url } from "@/env"
+import { incomeSources, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CreditCardTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
@@ -93,7 +94,7 @@ export function IncomesModal({ state, setState }) {
                   <CreditCardTwoTone />
                 </InputAdornment>}
               >
-                {state.sources.map(source => <MenuItem key={`income_source_${source.id}`} value={source.id}>{source.name}</MenuItem>)}
+                {incomeSources(state.sources, state.income?.source_id).map(source => <MenuItem key={`income_source_${source.id}`} value={source.id}>{sourceOptionLabel(source)}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField

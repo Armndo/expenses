@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { currencySymbol, numberFormat } from "@/utils/functions"
+import { currencySymbol, numberFormat, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CreditCardTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
@@ -79,8 +79,14 @@ export function TransfersModal({ state, setState }) {
   }
 
   function editTransfer(field, value) {
+    // The last origin chosen is the default of the next transfer: it is saved as soon as it is picked.
+    if (field === "from_source_id" && value) {
+      localStorage.setItem("lastTransferFrom", value)
+    }
+
     setState(prev => ({
       ...prev,
+      ...(field === "from_source_id" && value ? { lastTransferFrom: value } : {}),
       transfer: {
         ...prev.transfer,
         [field]: value !== "" ? value : null,
@@ -94,11 +100,14 @@ export function TransfersModal({ state, setState }) {
    * the list even when it is a card, so it can still be shown and edited.
    */
   function optionsFor(field) {
+    // The origin and the destination cannot be the same source: each list leaves out what the other one has.
     if (field !== "from_source_id") {
-      return state.sources
+      return state.sources.filter(source => source.id !== state.transfer?.from_source_id)
     }
 
-    return state.sources.filter(source => source.kind !== "card" || source.id === state.transfer?.from_source_id)
+    return state.sources.filter(source =>
+      source.id !== state.transfer?.to_source_id && (source.kind !== "card" || source.id === state.transfer?.from_source_id)
+    )
   }
 
   function sourceSelect(field, label, labelId) {
@@ -116,7 +125,7 @@ export function TransfersModal({ state, setState }) {
             <CreditCardTwoTone />
           </InputAdornment>}
         >
-          {optionsFor(field).map(source => <MenuItem key={`${field}_${source.id}`} value={source.id}>{source.name}</MenuItem>)}
+          {optionsFor(field).map(source => <MenuItem key={`${field}_${source.id}`} value={source.id}>{sourceOptionLabel(source)}</MenuItem>)}
         </Select>
       </FormControl>
     )

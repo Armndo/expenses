@@ -2,7 +2,7 @@ import { api_url } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { numberFormat, rateFormat, standardDate } from "@/utils/functions"
+import { defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
 import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, TransfersModal } from "@/components"
 import "./MainView.css"
 import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
@@ -40,6 +40,7 @@ export function MainView({ }) {
     rateModal: false,
     rate: null,
     lastSource: +localStorage.getItem("lastSource"),
+    lastTransferFrom: +localStorage.getItem("lastTransferFrom"),
     categories: [],
     lastCategory: +localStorage.getItem("lastCategory"),
   })
@@ -154,6 +155,9 @@ export function MainView({ }) {
   }
 
   function openIncomeModal(income = {}) {
+    // An income goes to a debit account: the only one, or the last source used if it is one.
+    const accounts = incomeSources(state.sources, null)
+
     setState(prev => ({
       ...prev,
       incomeModal: true,
@@ -161,7 +165,7 @@ export function MainView({ }) {
         date: standardDate(),
         amount: null,
         description: null,
-        source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
+        source_id: accounts.length === 1 ? accounts[0].id : (accounts.some(source => source.id === state.lastSource) ? state.lastSource : null),
         ...income,
       },
     }))
@@ -175,7 +179,7 @@ export function MainView({ }) {
         date: standardDate(),
         amount: null,
         description: null,
-        from_source_id: null,
+        from_source_id: defaultTransferFrom(state.sources, state.lastTransferFrom),
         to_source_id: null,
         ...transfer,
       },

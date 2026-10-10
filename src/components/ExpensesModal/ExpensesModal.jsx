@@ -1,4 +1,5 @@
 import { api_url } from "@/env"
+import { sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
@@ -147,7 +148,7 @@ export function ExpensesModal({ state, setState }) {
                   <CreditCardTwoTone />
                 </InputAdornment>}
               >
-                {state.sources.map(source => <MenuItem key={`source_${source.id}`} value={source.id}>{source.name}</MenuItem>)}
+                {state.sources.map(source => <MenuItem key={`source_${source.id}`} value={source.id}>{sourceOptionLabel(source)}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField
