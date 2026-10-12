@@ -21,11 +21,9 @@ const SUMMARY_CHIPS = [
   { key: "total_money", title: "Balance", sx: { background: "#bbdefb" } },
 ]
 
-/** The monthly budget chip: what is left of it, or by how much it was exceeded (`budget_left` is negative). */
+/** The monthly budget chip: what is left of it, negative (and red) when it was exceeded. */
 function budgetChip(left) {
-  return left < 0
-    ? { title: "Over budget", label: `${money(-left)} over`, background: "#ef9a9a" }
-    : { title: "Budget left", label: `${money(left)} left`, background: "#a5d6a7" }
+  return { label: money(left), background: left < 0 ? "#ef9a9a" : "#a5d6a7" }
 }
 
 export function MainView({ }) {
@@ -297,7 +295,7 @@ export function MainView({ }) {
             {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (chip.key !== "pending_instalments" || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
               <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
             </Tooltip>)}
-            {state.summary?.budget_left != null && (({ title, label, background }) => <Tooltip title={title}>
+            {state.summary?.budget_left != null && (({ label, background }) => <Tooltip title="Budget">
               <Chip size="small" sx={{ background }} label={label} />
             </Tooltip>)(budgetChip(state.summary.budget_left))}
             {foreignCurrencies.map(currency => <Tooltip key={currency} title={state.rates[currency] ? `Exchange rate ${currency}` : `Exchange rate ${currency} missing: set it to see the totals`}>
