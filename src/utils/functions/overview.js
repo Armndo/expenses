@@ -44,6 +44,19 @@ export const EVOLUTION_COLORS = {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+/** Short money for the axes, as the app's `compactMoney`: `$900`, `$4.5k`, `$160k`, `-$1.2M`. */
+export function compactMoney(value) {
+  const sign = value < 0 ? "-" : ""
+  const amount = Math.abs(value)
+  const text = amount >= 1_000_000
+    ? `${(amount / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
+    : amount >= 1_000
+      ? `${(amount / 1_000).toFixed(1).replace(/\.0$/, "")}k`
+      : amount.toFixed(0)
+
+  return `${sign}$${text}`
+}
+
 /** `2026-09-01` as `Sep 26`. */
 export function monthLabel(month) {
   const [year, number] = month.split("-")

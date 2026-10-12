@@ -1,12 +1,17 @@
 import { api_url } from "@/env"
-import { evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices } from "@/utils/functions"
+import { compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices } from "@/utils/functions"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 const NEGATIVE = "#d32f2f"
+
+/** A button that is on (contained) or off (outlined): both options of a pair are always visible, so it works as a toggle. */
+function ToggleButton({ label, selected, color = "primary", onClick }) {
+  return <Button size="small" color={color} variant={selected ? "contained" : "outlined"} onClick={onClick}>{label}</Button>
+}
 
 /** Value of a bar or slice: money by amount, a count by expenses. */
 function valueText(value, byAmount) {
@@ -66,19 +71,28 @@ function EvolutionChart({ chart }) {
   const values = chart.data.flatMap(row => chart.series.map(({ key }) => row[key])).filter(value => value !== null)
   const negative = values.some(value => value < 0)
 
-  return <Box>
-    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>{chart.title}</Typography>
-    <ResponsiveContainer width="100%" height={240}>
-      <LineChart data={chart.data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+  return <Box sx={{ minWidth: 0 }}>
+    <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: ".25rem" }}>{chart.title}</Typography>
+    <ResponsiveContainer width="100%" height={230}>
+      <LineChart data={chart.data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-        <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={value => numberFormat(value, 0, "$")} />
+        <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
+        <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />
         <Tooltip formatter={value => numberFormat(value, 2, "$")} />
-        {chart.series.length > 1 && <Legend />}
         {negative && <ReferenceLine y={0} stroke="#9e9e9e" />}
         {chart.series.map(({ key, label, color }) => <Line key={key} type="monotone" dataKey={key} name={label} stroke={color} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false} />)}
       </LineChart>
     </ResponsiveContainer>
+    <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".25rem 1rem", fontSize: ".85rem" }}>
+      {chart.series.map(({ key, label, color }) => {
+        const last = [...chart.data].reverse().find(row => row[key] !== null)?.[key]
+
+        return <Box key={key} sx={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: color, flex: "none" }} />
+          <span>{label}{last !== undefined && ` · ${numberFormat(last, 2, "$")}`}</span>
+        </Box>
+      })}
+    </Box>
   </Box>
 }
 
@@ -112,7 +126,7 @@ function Evolution() {
   }
 
   return charts.length > 0
-    ? <Box sx={{ display: "grid", gap: "1rem" }}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} />)}</Box>
+    ? <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: "1.5rem 1rem" }}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} />)}</Box>
     : <Typography>Nothing to show.</Typography>
 }
 
@@ -136,14 +150,18 @@ export function OverviewModal({ state, setState }) {
     state.overview && <div className="overview-modal" onClick={closeModal}>
       <Card elevation={5} sx={{ borderRadius: "1rem", maxHeight: "calc(100dvh - 2rem)", overflow: "auto", fontFamily: "Roboto, Arial, sans-serif" }} onClick={e => e.stopPropagation()}>
         <CardHeader title="Overview" />
-        <CardActions sx={{ p: "1rem", pt: 0, flexWrap: "wrap", gap: ".5rem", "& > :not(style) ~ :not(style)": { ml: 0 } }}>
-          <Button size="small" color="primary" variant={tab === "categories" ? "contained" : "outlined"} onClick={() => setTab("categories")}>Categories</Button>
-          <Button size="small" color="primary" variant={tab === "evolution" ? "contained" : "outlined"} onClick={() => setTab("evolution")}>Evolution</Button>
-          {tab === "categories" && <>
-            <Button size="small" color="success" variant="contained" onClick={() => toggle("byAmount", !state.byAmount)}>{state.byAmount ? "By Expenses" : "By Amount"}</Button>
-            <Button size="small" color="success" variant="outlined" onClick={() => toggle("overviewPie", !state.overviewPie)}>{state.overviewPie ? "Bars" : "Pie"}</Button>
-          </>}
-        </CardActions>
+        <Box sx={{ px: "1rem", pb: "1rem", display: "grid", gap: ".5rem" }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+            <ToggleButton label="Categories" selected={tab === "categories"} onClick={() => setTab("categories")} />
+            <ToggleButton label="Evolution" selected={tab === "evolution"} onClick={() => setTab("evolution")} />
+          </Box>
+          {tab === "categories" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+            <ToggleButton color="success" label="By Amount" selected={state.byAmount} onClick={() => toggle("byAmount", true)} />
+            <ToggleButton color="success" label="By Expenses" selected={!state.byAmount} onClick={() => toggle("byAmount", false)} />
+            <ToggleButton color="success" label="Bars" selected={!state.overviewPie} onClick={() => toggle("overviewPie", false)} />
+            <ToggleButton color="success" label="Pie" selected={state.overviewPie} onClick={() => toggle("overviewPie", true)} />
+          </Box>}
+        </Box>
         <CardContent>
           {tab === "evolution" ? <Evolution /> : state.overviewPie
             ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : <Typography>Nothing to show.</Typography>
