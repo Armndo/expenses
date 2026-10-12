@@ -1,3 +1,33 @@
+/* The card is a column that fits the screen, its 1rem margin included (dvh is the visible height on a phone,
+   vh stays as the fallback): the header and the buttons keep their height, however many lines the chips take,
+   and the table takes what is left and is the only thing that scrolls. */
+div.expenses-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100vh - 2rem) !important;
+  max-height: calc(100dvh - 2rem) !important;
+}
+
+div.expenses-card > .MuiCardHeader-root,
+div.expenses-card > .MuiCardActions-root {
+  flex: 0 0 auto;
+}
+
+div.expenses-card > .MuiCardContent-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.expenses-table-container {
+  max-height: none !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto !important;
+}
+
 .expenses-container {
   background: #f0f0f0;
   display: block;
@@ -167,19 +197,8 @@ td {
     width: calc(100vw - 6rem) !important;
   }
 
-  div.expenses-card {
-    /* max-height: calc(100dvh - 3rem) !important; */
-    max-height: 100dvh !important;
-    /* background: red !important; */
-  }
-
   td {
     font-size: 2.5vw !important;
-  }
-
-  .expenses-table-container {
-    max-height: calc(100vh - 16rem) !important;
-    /* background: green !important; */
   }
 
   .expenses-modal > div {
@@ -196,14 +215,6 @@ td {
   th > div {
     width: calc(50vw - 4rem) !important;
     width: calc(100vw - 6rem) !important;
-  }
-
-  div.expenses-card {
-    max-height: calc(100vh - 6rem) !important;
-  }
-
-  .expenses-table-container {
-    max-height: calc(100vh - 16rem) !important;
   }
 
   .expenses-modal > div {
