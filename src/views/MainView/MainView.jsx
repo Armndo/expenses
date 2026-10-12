@@ -21,9 +21,14 @@ const SUMMARY_CHIPS = [
   { key: "total_money", title: "Balance", sx: { background: "#bbdefb" } },
 ]
 
-/** The monthly budget chip: what is left of it, negative (and red) when it was exceeded. */
+/** The monthly budget chip: what is left of it (the carry included), negative (and red) when it was exceeded. */
 function budgetChip(left) {
   return { label: money(left), background: left < 0 ? "#ef9a9a" : "#a5d6a7" }
+}
+
+/** What the previous months left over or owe (`budget_carry`): outlined in the colour of its sign, and left out at 0. */
+function carryChip(carry) {
+  return { label: money(carry), color: carry < 0 ? "#c62828" : "#2e7d32" }
 }
 
 export function MainView({ }) {
@@ -212,7 +217,11 @@ export function MainView({ }) {
     .then(res => setState(prev => ({
       ...prev,
       settingsModal: true,
-      settings: { balance_start: res.data.balance_start.slice(0, 7), monthly_budget: res.data.monthly_budget },
+      settings: {
+        balance_start: res.data.balance_start.slice(0, 7),
+        budget_start: res.data.budget_start?.slice(0, 7) ?? null,
+        monthly_budget: res.data.monthly_budget,
+      },
     })))
     .catch(err => {
       if (err?.status === 401) {
@@ -295,6 +304,9 @@ export function MainView({ }) {
             {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (chip.key !== "pending_instalments" || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
               <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
             </Tooltip>)}
+            {state.summary?.budget_carry != null && Math.abs(state.summary.budget_carry) >= 0.005 && (({ label, color }) => <Tooltip title="Budget carried over from the previous months">
+              <Chip size="small" variant="outlined" sx={{ color, borderColor: color }} label={label} />
+            </Tooltip>)(carryChip(state.summary.budget_carry))}
             {state.summary?.budget_left != null && (({ label, background }) => <Tooltip title="Budget">
               <Chip size="small" sx={{ background }} label={label} />
             </Tooltip>)(budgetChip(state.summary.budget_left))}

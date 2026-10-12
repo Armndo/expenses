@@ -4,15 +4,23 @@ import { Button, Card, CardActions, CardContent, CardHeader, InputAdornment, Tex
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 
-/** Edits the settings: `state.settings` is `{ balance_start: "YYYY-MM", monthly_budget }` (an empty budget means none). */
+/**
+ * Edits the settings: `state.settings` is `{ balance_start: "YYYY-MM", budget_start: "YYYY-MM" or null, monthly_budget }`.
+ * An empty budget means none and an empty budget start means the same month as the balance start.
+ */
 export function SettingsModal({ state, setState }) {
   const navigate = useNavigate()
 
   function save() {
-    const { balance_start, monthly_budget } = state.settings
+    const { balance_start, budget_start, monthly_budget } = state.settings
 
     if (!/^\d{4}-\d{2}$/.test(balance_start ?? "")) {
       alert("Incorrect 'Balance start' format.")
+      return
+    }
+
+    if (budget_start !== null && !/^\d{4}-\d{2}$/.test(budget_start)) {
+      alert("Incorrect 'Budget start' format.")
       return
     }
 
@@ -25,7 +33,7 @@ export function SettingsModal({ state, setState }) {
 
     axios.put(
       `${api_url}/settings`,
-      { balance_start, monthly_budget: monthly_budget === null ? null : +monthly_budget },
+      { balance_start, budget_start, monthly_budget: monthly_budget === null ? null : +monthly_budget },
       { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
     )
     .then(() => window.location.reload())
@@ -57,6 +65,15 @@ export function SettingsModal({ state, setState }) {
               helperText="First month counted by the Balance; what is dated before it is left out."
               value={state.settings?.balance_start ?? ""}
               onChange={e => setState(prev => ({ ...prev, settings: { ...prev.settings, balance_start: e.target.value !== "" ? e.target.value : null } }))}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              sx={{ width: "100%", mb: "1rem" }}
+              label="Budget start"
+              type="month"
+              helperText="First month of the budget; what each month leaves over or owes passes to the next. Empty: the same as the balance start."
+              value={state.settings?.budget_start ?? ""}
+              onChange={e => setState(prev => ({ ...prev, settings: { ...prev.settings, budget_start: e.target.value !== "" ? e.target.value : null } }))}
               slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
