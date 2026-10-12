@@ -1,3 +1,16 @@
+## 0.6.0 (2026-10-11)
+
+### Feat
+
+- **settings**: add the budget start and a chip for the budget carry
+- **settings**: add a settings modal and the monthly budget chip
+- **deploy**: choose the environment instead of editing .env
+
+### Fix
+
+- **layout**: fit the card to the screen and scroll only the table
+- **settings**: show the budget chip as just the amount
+
 ## 0.5.0 (2026-10-10)
 
 ### Feat
