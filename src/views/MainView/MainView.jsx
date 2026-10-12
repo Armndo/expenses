@@ -38,6 +38,7 @@ export function MainView({ }) {
     modal: false,
     overview: false,
     byAmount: localStorage.getItem("byAmount") === "true",
+    overviewPie: localStorage.getItem("overviewPie") === "true",
     expense: null,
     incomeModal: false,
     income: null,
