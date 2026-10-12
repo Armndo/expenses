@@ -1,3 +1,16 @@
+## 0.7.0 (2026-10-11)
+
+### Feat
+
+- **overview**: put Spent across both columns and the other two charts below
+- **overview**: add the pie and negatives, and the evolution charts
+- **env**: mark everything that is not production in red
+
+### Fix
+
+- **overview**: keep the modal size per tab and fit many categories
+- **overview**: lay out the evolution charts in a grid and use toggle buttons
+
 ## 0.6.0 (2026-10-11)
 
 ### Feat
