@@ -104,7 +104,6 @@ td.transfer {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 60vw;
   cursor: default;
   z-index: 1000;
 }
@@ -206,9 +205,6 @@ td {
     /* background: cyan !important; */
   }
 
-  .overview-modal > div {
-    width: calc(100vw - 6rem);
-  }
 }
 
 @media only screen and (max-height: 600px) and (orientation: landscape) {

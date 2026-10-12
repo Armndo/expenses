@@ -4,7 +4,7 @@ import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } f
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 const NEGATIVE = "#d32f2f"
 
@@ -18,45 +18,71 @@ function valueText(value, byAmount) {
   return byAmount ? numberFormat(value, 2, "$") : numberFormat(value, 0)
 }
 
-/** The tooltip of a category: its colour, name, number of expenses and value (white on red when it is negative). */
-function CategoryTooltip({ active, payload, byAmount }) {
+/**
+ * The tooltip of a category: its colour, name, number of expenses and total spent, always both whatever the view is
+ * (the total as money, white on red when it is negative).
+ */
+function CategoryTooltip({ active, payload }) {
   const datum = active && payload?.[0]?.payload
+  const sum = datum && +datum.expenses_sum_amount
 
   return datum && <div style={{ padding: ".25rem", background: datum.color, color: foregroundColor(datum.color), textAlign: "center", minWidth: "10rem", borderRadius: ".25rem" }}>
     <h3 style={{ margin: ".25rem" }}>{datum.name} <span style={{ textShadow: `0 0 4px ${foregroundColor(datum.color)}` }}>{datum.alias}</span></h3>
-    <p style={{ margin: ".25rem" }}>{datum.expenses_count} expense{datum.expenses_count > 1 && "s"}</p>
+    <p style={{ margin: ".25rem" }}>{datum.expenses_count} expense{datum.expenses_count !== 1 && "s"}</p>
     <p style={{ margin: ".25rem" }}>
-      <span style={datum.value < 0 ? { background: "#fff", color: NEGATIVE, padding: "0 .35rem", borderRadius: ".25rem" } : undefined}>
-        {valueText(datum.value, byAmount)}
+      <span style={sum < 0 ? { background: "#fff", color: NEGATIVE, padding: "0 .35rem", borderRadius: ".25rem" } : undefined}>
+        {numberFormat(sum, 2, "$")}
       </span>
     </p>
   </div>
 }
 
-/** Bars by category; a negative one (refunds) is drawn with its absolute value and a red outline, and its value is red. */
-function CategoryBars({ bars, byAmount }) {
-  return <ResponsiveContainer width="100%" height={400}>
-    <BarChart data={bars}>
-      <YAxis width="auto" tickFormatter={value => valueText(value, byAmount)} />
-      <XAxis dataKey="alias" tickSize={0} tickMargin={8} tick={{ fontSize: 14 }} />
-      <Tooltip content={props => <CategoryTooltip {...props} byAmount={byAmount} />} />
-      <Bar dataKey="abs" fill="#1976d2">
-        {bars.map(item => <Cell key={item.id ?? item.name} fill={item.color} stroke={item.value < 0 ? NEGATIVE : undefined} strokeWidth={item.value < 0 ? 3 : 0} />)}
-      </Bar>
-    </BarChart>
-  </ResponsiveContainer>
+/** Short value for the bars and their axis: `$6.1k` by amount, a plain count by expenses. */
+function shortValue(value, byAmount) {
+  return byAmount ? compactMoney(value) : numberFormat(value, 0)
 }
 
-/** Pie of the positive values with a legend: colour, alias and name, value and percentage. */
+/**
+ * Bars by category, one row each like the app's (emoji and name, bar, value), so that thirty categories stay legible: the
+ * rows scroll inside the zone. A negative one (refunds) is drawn with its absolute value and a red outline, and its value is red.
+ */
+function CategoryBars({ bars, byAmount }) {
+  const rows = bars.map(item => ({ ...item, label: `${item.alias ?? ""} ${item.name}`.trim(), shown: shortValue(item.value, byAmount) }))
+
+  return <Box sx={{ height: "100%", overflowY: "auto" }}>
+    <Box sx={{ height: rows.length * 30 + 40 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 56, left: 0, bottom: 4 }} barCategoryGap={4}>
+          <XAxis type="number" orientation="top" tick={{ fontSize: 12 }} tickFormatter={value => shortValue(value, byAmount)} />
+          <YAxis type="category" dataKey="label" width={118} tickLine={false} interval={0} tick={({ x, y, payload }) => <text x={x - 4} y={y} dy=".35em" textAnchor="end" fontSize={13} fill="#212121">{payload.value.length > 17 ? `${payload.value.slice(0, 16)}…` : payload.value}</text>} />
+          <Tooltip content={CategoryTooltip} cursor={{ fill: "rgba(0, 0, 0, .05)" }} />
+          <Bar dataKey="abs" fill="#1976d2" isAnimationActive={false}>
+            {rows.map(item => <Cell key={item.id ?? item.name} fill={item.color} stroke={item.value < 0 ? NEGATIVE : undefined} strokeWidth={item.value < 0 ? 2 : 0} />)}
+            <LabelList dataKey="shown" content={props => <text x={props.x + props.width + 4} y={props.y + props.height / 2} dominantBaseline="middle" fontSize={12} fill={rows[props.index]?.value < 0 ? NEGATIVE : "#424242"}>{props.value}</text>} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </Box>
+  </Box>
+}
+
+/**
+ * Pie of the positive values with a legend (colour, alias and name, value and percentage). The pie keeps its size and only
+ * the legend scrolls: below the pie on a phone, beside it from `sm` up.
+ */
 function CategoryPie({ slices, byAmount }) {
-  return <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
-    <PieChart width={260} height={260}>
-      <Pie data={slices} dataKey="value" nameKey="name" innerRadius={0} outerRadius={120} stroke="#fff" strokeWidth={1.5} isAnimationActive={false}>
-        {slices.map(item => <Cell key={item.id ?? item.name} fill={item.color} />)}
-      </Pie>
-      <Tooltip content={props => <CategoryTooltip {...props} byAmount={byAmount} />} />
-    </PieChart>
-    <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "grid", gap: ".35rem", fontSize: ".9rem" }}>
+  return <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "stretch" }, gap: "1rem" }}>
+    <Box sx={{ flex: { xs: "0 0 min(240px, 50%)", sm: "0 0 260px" }, minHeight: 0, minWidth: 0 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie data={slices} dataKey="value" nameKey="name" outerRadius="92%" stroke="#fff" strokeWidth={1.5} isAnimationActive={false}>
+            {slices.map(item => <Cell key={item.id ?? item.name} fill={item.color} />)}
+          </Pie>
+          <Tooltip content={CategoryTooltip} />
+        </PieChart>
+      </ResponsiveContainer>
+    </Box>
+    <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, flex: 1, minHeight: 0, minWidth: 0, overflowY: "auto", display: "grid", alignContent: "start", gap: ".35rem", fontSize: ".9rem" }}>
       {slices.map(item => <li key={item.id ?? item.name} style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
         <span style={{ width: 12, height: 12, borderRadius: 2, background: item.color, flex: "none" }} />
         <span>{item.alias} {item.name}</span>
@@ -130,6 +156,25 @@ function Evolution() {
     : <Typography>Nothing to show.</Typography>
 }
 
+/*
+ * The size of the modal is set by the tab and not by what it holds, so that changing the view or the data does not make
+ * it jump: Categories always has the same width and the same height for bars, pie and the empty message (what does not
+ * fit scrolls inside), and Evolution has its own, wider. On a phone the header and the Close button stay in view and
+ * only the content scrolls.
+ */
+const CHROME = "17rem" // header, the two rows of buttons, Close and the margins of the card
+
+const CATEGORIES_SIZE = {
+  width: "min(92vw, 640px)",
+  content: { height: `min(420px, calc(100dvh - ${CHROME}))`, minHeight: 220 },
+}
+
+const EVOLUTION_SIZE = {
+  width: "min(calc(100vw - 1rem), 1100px)",
+  // One column on a phone and a tablet: a fixed height that scrolls. Three columns on a desktop: as tall as it needs.
+  content: { height: { xs: `calc(100dvh - ${CHROME})`, md: "auto" }, minHeight: { md: 340 }, maxHeight: `calc(100dvh - ${CHROME})` },
+}
+
 export function OverviewModal({ state, setState }) {
   const [tab, setTab] = useState("categories")
 
@@ -146,11 +191,18 @@ export function OverviewModal({ state, setState }) {
     setState(prev => ({ ...prev, [key]: value }))
   }
 
+  const size = tab === "evolution" ? EVOLUTION_SIZE : CATEGORIES_SIZE
+  const empty = <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography>Nothing to show.</Typography></Box>
+
   return (
     state.overview && <div className="overview-modal" onClick={closeModal}>
-      <Card elevation={5} sx={{ borderRadius: "1rem", maxHeight: "calc(100dvh - 2rem)", overflow: "auto", fontFamily: "Roboto, Arial, sans-serif" }} onClick={e => e.stopPropagation()}>
-        <CardHeader title="Overview" />
-        <Box sx={{ px: "1rem", pb: "1rem", display: "grid", gap: ".5rem" }}>
+      <Card
+        elevation={5}
+        sx={{ boxSizing: "border-box", borderRadius: "1rem", width: size.width, maxHeight: "calc(100dvh - 2rem)", display: "flex", flexDirection: "column", overflow: "hidden", transition: "width .2s ease", fontFamily: "Roboto, Arial, sans-serif" }}
+        onClick={e => e.stopPropagation()}
+      >
+        <CardHeader title="Overview" sx={{ flex: "none" }} />
+        <Box sx={{ px: "1rem", pb: "1rem", display: "grid", gap: ".5rem", flex: "none" }}>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton label="Categories" selected={tab === "categories"} onClick={() => setTab("categories")} />
             <ToggleButton label="Evolution" selected={tab === "evolution"} onClick={() => setTab("evolution")} />
@@ -162,12 +214,12 @@ export function OverviewModal({ state, setState }) {
             <ToggleButton color="success" label="Pie" selected={state.overviewPie} onClick={() => toggle("overviewPie", true)} />
           </Box>}
         </Box>
-        <CardContent>
+        <CardContent sx={{ ...size.content, overflowY: tab === "evolution" ? "auto" : "hidden", pt: 0 }}>
           {tab === "evolution" ? <Evolution /> : state.overviewPie
-            ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : <Typography>Nothing to show.</Typography>
-            : bars.length > 0 ? <CategoryBars bars={bars} byAmount={state.byAmount} /> : <Typography>Nothing to show.</Typography>}
+            ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : empty
+            : bars.length > 0 ? <CategoryBars bars={bars} byAmount={state.byAmount} /> : empty}
         </CardContent>
-        <CardActions sx={{ p: "1rem" }}>
+        <CardActions sx={{ p: "1rem", flex: "none" }}>
           <Button color="error" type="button" variant="contained" onClick={closeModal}>Close</Button>
         </CardActions>
       </Card>
