@@ -3,7 +3,7 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, TransfersModal } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, SettingsModal, TransfersModal } from "@/components"
 import "./MainView.css"
 import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Tooltip, Typography } from "@mui/material"
@@ -20,6 +20,13 @@ const SUMMARY_CHIPS = [
   { key: "pending_instalments", title: "Pending instalments", sx: { background: "#bdbaff" } },
   { key: "total_money", title: "Balance", sx: { background: "#bbdefb" } },
 ]
+
+/** The monthly budget chip: what is left of it, or by how much it was exceeded (`budget_left` is negative). */
+function budgetChip(left) {
+  return left < 0
+    ? { title: "Over budget", label: `${money(-left)} over`, background: "#ef9a9a" }
+    : { title: "Budget left", label: `${money(left)} left`, background: "#a5d6a7" }
+}
 
 export function MainView({ }) {
   const [state, setState] = useState({
@@ -40,6 +47,8 @@ export function MainView({ }) {
     rates: {},
     rateModal: false,
     rate: null,
+    settingsModal: false,
+    settings: null,
     lastSource: +localStorage.getItem("lastSource"),
     lastTransferFrom: +localStorage.getItem("lastTransferFrom"),
     categories: [],
@@ -195,6 +204,27 @@ export function MainView({ }) {
     }))
   }
 
+  function openSettingsModal() {
+    setState(prev => ({ ...prev, loading: true }))
+
+    axios.get(
+      `${api_url}/settings`,
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    )
+    .then(res => setState(prev => ({
+      ...prev,
+      settingsModal: true,
+      settings: { balance_start: res.data.balance_start.slice(0, 7), monthly_budget: res.data.monthly_budget },
+    })))
+    .catch(err => {
+      if (err?.status === 401) {
+        localStorage.removeItem("token")
+        navigate("/login")
+      }
+    })
+    .finally(() => setState(prev => ({ ...prev, loading: false })))
+  }
+
   function openOverview() {
     setState(prev => ({
       ...prev,
@@ -242,6 +272,10 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      <SettingsModal
+        state={state}
+        setState={setState}
+      />
       <OverviewModal
         state={state}
         setState={setState}
@@ -263,6 +297,9 @@ export function MainView({ }) {
             {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (chip.key !== "pending_instalments" || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
               <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
             </Tooltip>)}
+            {state.summary?.budget_left != null && (({ title, label, background }) => <Tooltip title={title}>
+              <Chip size="small" sx={{ background }} label={label} />
+            </Tooltip>)(budgetChip(state.summary.budget_left))}
             {foreignCurrencies.map(currency => <Tooltip key={currency} title={state.rates[currency] ? `Exchange rate ${currency}` : `Exchange rate ${currency} missing: set it to see the totals`}>
               <Chip
                 size="small"
@@ -281,6 +318,7 @@ export function MainView({ }) {
           <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
           <Button size="small" color="primary" variant="outlined" onClick={() => openTransferModal()}>Transfer</Button>
           <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
+          <Button size="small" color="secondary" variant="outlined" onClick={openSettingsModal} disabled={state.editing}>Settings</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
         </CardActions>
         <CardContent sx={{ width: "calc(100% - 2rem)", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
