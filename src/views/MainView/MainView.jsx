@@ -1,4 +1,4 @@
-import { api_url } from "@/env"
+import { api_url, env_name } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -293,6 +293,7 @@ export function MainView({ }) {
             <Button size="small" color="secondary" variant="contained" aria-label="Previous month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate()} disabled={state.editing}><ChevronLeft fontSize="small" /></Button>
             <MonthPicker {...shownMonth()} onSelect={selectMonth} disabled={state.editing} />
             <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate(true)} disabled={state.editing}><ChevronRight fontSize="small" /></Button>
+            {env_name && <Chip size="small" label={env_name} sx={{ background: "#c62828", color: "#fff", fontWeight: 500 }} />}
             <Button size="small" color="error" variant="contained" aria-label="Logout" sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 }, height: 30 }} onClick={logout}>
               <Logout fontSize="small" sx={{ display: { xs: "block", sm: "none" } }} />
               <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Logout</Box>

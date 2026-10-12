@@ -4,6 +4,8 @@ import { useState } from "react"
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
+const LONGEST = ["September", "November", "December", "February"]
+
 /** Nothing is billed beyond the month after the current one, so later months cannot be picked. */
 function canSelect(year, month, now = new Date()) {
   return new Date(year, month, 1) <= new Date(now.getFullYear(), now.getMonth() + 1, 1)
@@ -32,7 +34,12 @@ export function MonthPicker({ year, month, onSelect, disabled = false }) {
       endIcon={<ArrowDropDown />}
       sx={{ fontSize: { xs: "1.2rem", sm: "1.5rem" }, fontWeight: 400, textTransform: "none", lineHeight: 1.3, px: 1 }}
     >
-      {MONTHS[month]} {year}
+      {/* The longest names, hidden, share the cell with the real one so the button (and the arrows beside it)
+          keep the same width in every month. */}
+      <Box component="span" sx={{ display: "inline-grid", justifyItems: "center" }}>
+        {LONGEST.map(name => <Box key={name} component="span" aria-hidden sx={{ gridArea: "1 / 1", visibility: "hidden" }}>{name} {year}</Box>)}
+        <Box component="span" sx={{ gridArea: "1 / 1" }}>{MONTHS[month]} {year}</Box>
+      </Box>
     </Button>
     <Popover
       open={Boolean(anchor)}
