@@ -99,7 +99,7 @@ function EvolutionChart({ chart }) {
 
   return <Box sx={{ minWidth: 0 }}>
     <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: ".25rem" }}>{chart.title}</Typography>
-    <ResponsiveContainer width="100%" height={230}>
+    <ResponsiveContainer width="100%" height={200}>
       <LineChart data={chart.data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
@@ -120,6 +120,20 @@ function EvolutionChart({ chart }) {
       })}
     </Box>
   </Box>
+}
+
+/**
+ * How the charts are laid out, by the width of the window: on a desktop Spent takes the two columns of the first row and
+ * Balance and Debit, and Instalments and Budget go side by side in the next one; one column on a phone.
+ */
+const EVOLUTION_GRID = {
+  display: "grid",
+  gap: "1.5rem 1rem",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  "@media (min-width: 720px)": {
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    "& > :first-of-type": { gridColumn: "span 2" },
+  },
 }
 
 /** The month by month evolution, asked to `GET /history` when the tab opens. */
@@ -152,7 +166,7 @@ function Evolution() {
   }
 
   return charts.length > 0
-    ? <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: "1.5rem 1rem" }}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} />)}</Box>
+    ? <Box sx={EVOLUTION_GRID}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} />)}</Box>
     : <Typography>Nothing to show.</Typography>
 }
 
@@ -169,10 +183,13 @@ const CATEGORIES_SIZE = {
   content: { height: `min(420px, calc(100dvh - ${CHROME}))`, minHeight: 220 },
 }
 
+// Evolution has no second row of buttons, so its chrome is shorter.
+const EVOLUTION_CHROME = "14rem"
+
 const EVOLUTION_SIZE = {
   width: "min(calc(100vw - 1rem), 1100px)",
-  // One column on a phone and a tablet: a fixed height that scrolls. Three columns on a desktop: as tall as it needs.
-  content: { height: { xs: `calc(100dvh - ${CHROME})`, md: "auto" }, minHeight: { md: 340 }, maxHeight: `calc(100dvh - ${CHROME})` },
+  // One column on a phone and a tablet: a fixed height that scrolls. On a desktop: as tall as it needs.
+  content: { height: { xs: `calc(100dvh - ${EVOLUTION_CHROME})`, md: "auto" }, minHeight: { md: 340 }, maxHeight: `calc(100dvh - ${EVOLUTION_CHROME})` },
 }
 
 export function OverviewModal({ state, setState }) {
