@@ -2,6 +2,7 @@ import { api_url } from "@/env"
 import { currencySymbol, formatDate, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
 import axios from "axios"
+import { useNavigate } from "react-router-dom"
 
 function monthlyAmount(instalment) {
   if (!instalment) {
@@ -31,6 +32,8 @@ function describe(item, target) {
 }
 
 function ShownItem({ categories, setState, item, source, target = "expenses", className = null, openModal = () => null }) {
+  const navigate = useNavigate()
+
   function destroy() {
     if (!confirm("Delete?")) {
       return
@@ -53,6 +56,8 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
       window.location.reload()
     })
     .catch(err => {
+      setState(prev => ({ ...prev, loading: false }))
+
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")

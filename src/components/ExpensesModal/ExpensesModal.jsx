@@ -3,8 +3,11 @@ import { sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
+import { useNavigate } from "react-router-dom"
 
 export function ExpensesModal({ state, setState }) {
+  const navigate = useNavigate()
+
   function selectSource(value) {
     localStorage.setItem("lastSource", value)
 
@@ -63,6 +66,8 @@ export function ExpensesModal({ state, setState }) {
     )
     .then(() => window.location.reload())
     .catch(err => {
+      setState(prev => ({ ...prev, loading: false }))
+
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")
@@ -102,6 +107,8 @@ export function ExpensesModal({ state, setState }) {
     )
     .then(() => window.location.reload())
     .catch(err => {
+      setState(prev => ({ ...prev, loading: false }))
+
       if (err?.status === 401) {
         localStorage.removeItem("token")
         navigate("/login")
