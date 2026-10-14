@@ -179,6 +179,7 @@ export function MainView({ }) {
         date: standardDate(),
         amount: null,
         description: null,
+        skip_budget: false,
         source_id: accounts.length === 1 ? accounts[0].id : (accounts.some(source => source.id === state.lastSource) ? state.lastSource : null),
         ...income,
       },

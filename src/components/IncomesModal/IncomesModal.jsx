@@ -1,7 +1,7 @@
 import { api_url } from "@/env"
 import { incomeSources, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CreditCardTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
-import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, InputAdornment, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 
@@ -132,6 +132,18 @@ export function IncomesModal({ state, setState }) {
                 }
               }}
             />
+            <FormControlLabel
+              control={<Checkbox
+                onChange={e => editIncome("skip_budget", e.target.checked)}
+                checked={state.income?.skip_budget ?? false}
+                color="default"
+                sx={{ p: 0, m: "2px 12px 0 8px", "& .MuiSvgIcon-root": { fontSize: "1.5rem" }}}
+              />}
+              label={<>
+                <Typography>Skip budget</Typography>
+                <Typography variant="caption" sx={{ display: "block", lineHeight: 1.3, color: "text.secondary" }}>Salary, opening balance, loan repayment, etc.</Typography>
+              </>}
+              sx={{ width: "100%", mr: 0, mb: "1rem", alignItems: "flex-start" }} />
             <TextField
               sx={{ width: "100%" }}
               label="Description"
