@@ -2,7 +2,7 @@ import { api_url, env_name } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
+import { CHIP_COLORS, defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
 import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, SettingsModal, TransfersModal } from "@/components"
 import "./MainView.css"
 import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
@@ -14,16 +14,16 @@ function money(value) {
 
 /** The month totals under the title, from `summary` (the API does the math). */
 const SUMMARY_CHIPS = [
-  { key: "spent", title: "Spent", sx: { background: "#c0c0c0" } },
-  { key: "cash", title: "Debit", sx: { background: "#c8e6c9" } },
-  { key: "debt", title: "Debt", sx: { background: "#ffcdd2" } },
-  { key: "pending_instalments", title: "Pending instalments", sx: { background: "#bdbaff" } },
-  { key: "total_money", title: "Balance", sx: { background: "#bbdefb" } },
+  { key: "spent", title: "Spent", sx: { background: CHIP_COLORS.spent } },
+  { key: "cash", title: "Debit", sx: { background: CHIP_COLORS.debit } },
+  { key: "debt", title: "Debt", sx: { background: CHIP_COLORS.debt } },
+  { key: "pending_instalments", title: "Pending instalments", sx: { background: CHIP_COLORS.instalments } },
+  { key: "total_money", title: "Balance", sx: { background: CHIP_COLORS.balance } },
 ]
 
 /** The monthly budget chip: what is left of it (the carry included), negative (and red) when it was exceeded. */
 function budgetChip(left) {
-  return { label: money(left), background: left < 0 ? "#ef9a9a" : "#a5d6a7" }
+  return { label: money(left), background: left < 0 ? CHIP_COLORS.budgetOver : CHIP_COLORS.budget }
 }
 
 /** What the previous months left over or owe (`budget_carry`): outlined in the colour of its sign, and left out at 0. */

@@ -33,13 +33,24 @@ export function overviewBars(categories, byAmount) {
     .map(item => ({ ...item, abs: Math.abs(item.value) }))
 }
 
+/** Colour of the chips under the title of the month; the lines of the evolution charts use the same ones. */
+export const CHIP_COLORS = {
+  spent: "#c0c0c0",
+  debit: "#c8e6c9",
+  debt: "#ffcdd2",
+  instalments: "#bdbaff",
+  balance: "#bbdefb",
+  budget: "#a5d6a7",
+  budgetOver: "#ef9a9a",
+}
+
 /** Colour of each line of the evolution charts. */
 export const EVOLUTION_COLORS = {
-  balance: "#1976d2",
-  debit: "#2e7d32",
-  spent: "#616161",
-  instalments: "#7e57c2",
-  budget: "#ef6c00",
+  balance: CHIP_COLORS.balance,
+  debit: CHIP_COLORS.debit,
+  spent: CHIP_COLORS.spent,
+  instalments: CHIP_COLORS.instalments,
+  budget: CHIP_COLORS.budget,
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
