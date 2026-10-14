@@ -1,3 +1,21 @@
+## 0.8.0 (2026-10-13)
+
+### Feat
+
+- **overview**: mark the month under the cursor in the three Evolution charts
+- **overview**: draw Spent as bars and the lines straight
+- **overview**: show the projection dotted and add the linear and log scales to Evolution
+- **months**: stop the month picker and the arrows at the range and add the Evolution range toggle
+- **overview**: end the evolution at the month on the screen and colour the budget by its sign
+- **overview**: draw the evolution lines with the colours of the chips
+- **incomes**: add the Skip budget checkbox to the income form
+
+### Fix
+
+- **overview**: colour a negative month the same on the linear and the log scale
+- **overview**: remember the tab the Overview was left on
+- **expenses**: go back to the login when the token expired while saving or deleting
+
 ## 0.7.0 (2026-10-11)
 
 ### Feat
