@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices } from "@/utils/functions"
+import { BUDGET_COLORS, budgetColor, compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices, standardDate } from "@/utils/functions"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
@@ -97,16 +97,42 @@ function EvolutionChart({ chart }) {
   const values = chart.data.flatMap(row => chart.series.map(({ key }) => row[key])).filter(value => value !== null)
   const negative = values.some(value => value < 0)
 
+  // The budget changes colour with its sign: a gradient with a hard stop at the zero of the line (top = highest value).
+  const budget = chart.data.map(row => row.budget).filter(value => value !== null && value !== undefined)
+  const budgetMixed = budget.length > 0 && Math.min(...budget) < 0 && Math.max(...budget) > 0
+  const zeroAt = budgetMixed ? Math.max(...budget) / (Math.max(...budget) - Math.min(...budget)) : null
+  const gradientId = `budget-sign-${chart.key}`
+
+  function stroke(key, color) {
+    if (key !== "budget" || budget.length === 0) {
+      return color
+    }
+
+    return budgetMixed ? `url(#${gradientId})` : budgetColor(budget[0])
+  }
+
+  function dot(key) {
+    return key === "budget"
+      ? ({ cx, cy, payload }) => payload[key] == null || cx == null || cy == null ? null : <circle key={`${key}-${payload.month}`} cx={cx} cy={cy} r={3} fill={budgetColor(payload[key])} />
+      : { r: 3 }
+  }
+
   return <Box sx={{ minWidth: 0 }}>
     <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: ".25rem" }}>{chart.title}</Typography>
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={chart.data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        {budgetMixed && <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset={zeroAt} stopColor={BUDGET_COLORS.positive} />
+            <stop offset={zeroAt} stopColor={BUDGET_COLORS.negative} />
+          </linearGradient>
+        </defs>}
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
         <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />
         <Tooltip formatter={value => numberFormat(value, 2, "$")} />
         {negative && <ReferenceLine y={0} stroke="#9e9e9e" />}
-        {chart.series.map(({ key, label, color }) => <Line key={key} type="monotone" dataKey={key} name={label} stroke={color} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false} />)}
+        {chart.series.map(({ key, label, color }) => <Line key={key} type="monotone" dataKey={key} name={label} stroke={stroke(key, color)} strokeWidth={2} dot={dot(key)} connectNulls={false} isAnimationActive={false} />)}
       </LineChart>
     </ResponsiveContainer>
     <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".25rem 1rem", fontSize: ".85rem" }}>
@@ -114,7 +140,7 @@ function EvolutionChart({ chart }) {
         const last = [...chart.data].reverse().find(row => row[key] !== null)?.[key]
 
         return <Box key={key} sx={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: color, flex: "none" }} />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: key === "budget" && last !== undefined ? budgetColor(last) : color, flex: "none" }} />
           <span>{label}{last !== undefined && ` · ${numberFormat(last, 2, "$")}`}</span>
         </Box>
       })}
@@ -137,7 +163,7 @@ const EVOLUTION_GRID = {
 }
 
 /** The month by month evolution, asked to `GET /history` when the tab opens. */
-function Evolution() {
+function Evolution({ month }) {
   const navigate = useNavigate()
   const [history, setHistory] = useState({ loading: true, error: false, months: [] })
 
@@ -155,7 +181,7 @@ function Evolution() {
     })
   }, [])
 
-  const charts = useMemo(() => evolutionCharts(history.months), [history.months])
+  const charts = useMemo(() => evolutionCharts(history.months, month), [history.months, month])
 
   if (history.loading) {
     return <Typography>Loading...</Typography>
@@ -212,6 +238,9 @@ export function OverviewModal({ state, setState }) {
     setState(prev => ({ ...prev, [key]: value }))
   }
 
+  // The month on the screen (`YYYY-MM`): the evolution ends there.
+  const shownMonth = (state.date ?? standardDate()).slice(0, 7)
+
   const size = tab === "evolution" ? EVOLUTION_SIZE : CATEGORIES_SIZE
   const empty = <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography>Nothing to show.</Typography></Box>
 
@@ -236,7 +265,7 @@ export function OverviewModal({ state, setState }) {
           </Box>}
         </Box>
         <CardContent sx={{ ...size.content, overflowY: tab === "evolution" ? "auto" : "hidden", pt: 0 }}>
-          {tab === "evolution" ? <Evolution /> : state.overviewPie
+          {tab === "evolution" ? <Evolution month={shownMonth} /> : state.overviewPie
             ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : empty
             : bars.length > 0 ? <CategoryBars bars={bars} byAmount={state.byAmount} /> : empty}
         </CardContent>
