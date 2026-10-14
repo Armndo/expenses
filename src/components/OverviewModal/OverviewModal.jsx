@@ -169,6 +169,7 @@ function EvolutionChart({ chart, now, shown, log }) {
       const value = row[key]
       copy[`${key}_value`] = value
       copy[key] = value === null ? null : place(value)
+      copy[`${key}_drawn`] = copy[key]
 
       if (row.at >= now) {
         copy[`${key}_projected`] = copy[key]
@@ -223,22 +224,50 @@ function EvolutionChart({ chart, now, shown, log }) {
     }
   }
 
+  // Spent is a flow (what was spent that month), so it is drawn as bars: a month is a bar, filled when it is real and with a
+  // dotted outline when it is a projection; a negative one (a refund) is green. The axis has the zero in it. On a log axis the
+  // bar is as tall as the position of its value (`logScale`, linear up to `LOG_FROM`) and a negative one goes up too.
+  const asBars = chart.key === "spent"
+  const barAxis = chartAxis(Math.min(0, ...drawn), Math.max(0, ...drawn), log)
+
+  const lineAxis = yAxis
+    ? <YAxis width="auto" tick={{ fontSize: 12 }} interval={0} ticks={yAxis.ticks} domain={[yAxis.low, yAxis.high]} padding={{ top: 6, bottom: 6 }} tickFormatter={position => compactMoney(log ? unlogScale(position) : position)} />
+    : <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />
+  const barsAxis = barAxis
+    ? <YAxis width="auto" tick={{ fontSize: 12 }} interval={0} ticks={barAxis.ticks} domain={[barAxis.low, barAxis.high]} padding={{ top: 6, bottom: 0 }} tickFormatter={position => compactMoney(log ? unlogScale(position) : position)} />
+    : <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />
+
+  const plot = asBars
+    ? <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+      <XAxis dataKey="month" tick={{ fontSize: 12 }} interval="preserveStartEnd" minTickGap={16} />
+      {barsAxis}
+      <Tooltip content={<EvolutionTooltip series={chart.series} projected={now} />} cursor={{ fill: "rgba(0, 0, 0, .06)" }} />
+      <ReferenceLine y={0} stroke="#9e9e9e" />
+      <Bar dataKey="spent_drawn" isAnimationActive={false} maxBarSize={24}>
+        {data.map(row => {
+          const barColor = pointColor("spent", row.spent_value, chart.series[0].color)
+
+          return row.at > now
+            ? <Cell key={row.at} fill={barColor} fillOpacity={0.25} stroke={barColor} strokeDasharray="3 3" />
+            : <Cell key={row.at} fill={barColor} />
+        })}
+      </Bar>
+    </BarChart>
+    : <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <defs>{gradients}</defs>
+      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+      <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
+      {lineAxis}
+      <Tooltip content={<EvolutionTooltip series={chart.series} projected={now} />} />
+      {negative && <ReferenceLine y={0} stroke="#9e9e9e" />}
+      {chart.series.map(({ key, label, color }) => <Line key={key} type="linear" dataKey={key} name={label} stroke={stroke(key, color)} strokeWidth={2} dot={dot(key, color)} activeDot={activeDot(key, color)} connectNulls={false} isAnimationActive={false} />)}
+      {chart.series.map(({ key, label, color }) => <Line key={`${key}_projected`} type="linear" dataKey={`${key}_projected`} name={label} stroke={stroke(key, color, "_projected")} strokeWidth={2} strokeDasharray="4 4" dot={dot(key, color, "_projected")} activeDot={activeDot(key, color, "_projected")} connectNulls={false} isAnimationActive={false} />)}
+    </LineChart>
+
   return <Box sx={{ minWidth: 0 }}>
     <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: ".25rem" }}>{chart.title}</Typography>
-    <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <defs>{gradients}</defs>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
-        {yAxis
-          ? <YAxis width="auto" tick={{ fontSize: 12 }} interval={0} ticks={yAxis.ticks} domain={[yAxis.low, yAxis.high]} padding={{ top: 6, bottom: 6 }} tickFormatter={position => compactMoney(log ? unlogScale(position) : position)} />
-          : <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />}
-        <Tooltip content={<EvolutionTooltip series={chart.series} projected={now} />} />
-        {negative && <ReferenceLine y={0} stroke="#9e9e9e" />}
-        {chart.series.map(({ key, label, color }) => <Line key={key} type="monotone" dataKey={key} name={label} stroke={stroke(key, color)} strokeWidth={2} dot={dot(key, color)} activeDot={activeDot(key, color)} connectNulls={false} isAnimationActive={false} />)}
-        {chart.series.map(({ key, label, color }) => <Line key={`${key}_projected`} type="monotone" dataKey={`${key}_projected`} name={label} stroke={stroke(key, color, "_projected")} strokeWidth={2} strokeDasharray="4 4" dot={dot(key, color, "_projected")} activeDot={activeDot(key, color, "_projected")} connectNulls={false} isAnimationActive={false} />)}
-      </LineChart>
-    </ResponsiveContainer>
+    <ResponsiveContainer width="100%" height={200}>{plot}</ResponsiveContainer>
     <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".25rem 1rem", fontSize: ".85rem" }}>
       {chart.series.map(({ key, label, color }) => {
         const last = [...chart.data].reverse().find(row => row[key] !== null && row.at <= shown)?.[key]
