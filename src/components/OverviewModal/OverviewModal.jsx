@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { BUDGET_COLORS, budgetColor, chartAxis, compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices, standardDate, logScale, unlogScale } from "@/utils/functions"
+import { BUDGET_COLORS, budgetColor, chartAxis, compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices, standardDate, logScale, unlogScale, monthLabel } from "@/utils/functions"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
@@ -150,9 +150,10 @@ function negativeGradient(id, key, color, points) {
  * One chart. The months after `now` (`YYYY-MM`, the real current month) are a projection and are drawn with a dotted
  * line, joined to the last real month; the legend shows the value of the month on the screen (`shown`). With `log` the
  * Y axis is a log scale (linear up to `LOG_FROM`, logarithmic above), for the charts whose values are very far apart;
- * a negative value is drawn as its absolute value, in another colour.
+ * a negative value is drawn as its absolute value, in another colour. `hovered` is the month (`YYYY-MM`) under the cursor in
+ * any of the three charts: every chart marks it with a vertical line and its legend shows the values of that month.
  */
-function EvolutionChart({ chart, now, shown, log }) {
+function EvolutionChart({ chart, now, shown, log, hovered, onHover }) {
   const values = chart.data.flatMap(row => chart.series.map(({ key }) => row[key])).filter(value => value !== null)
   // On a log axis a negative value has no place: it is drawn as its absolute value (green, or red for the budget).
   const drawn = log ? values.map(Math.abs) : values
@@ -237,13 +238,23 @@ function EvolutionChart({ chart, now, shown, log }) {
     ? <YAxis width="auto" tick={{ fontSize: 12 }} interval={0} ticks={barAxis.ticks} domain={[barAxis.low, barAxis.high]} padding={{ top: 6, bottom: 0 }} tickFormatter={position => compactMoney(log ? unlogScale(position) : position)} />
     : <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />
 
+  // The month under the cursor, shared by the three charts: it is marked in each one and its legend shows that month.
+  const hoveredRow = hovered ? data.find(row => row.at === hovered) : undefined
+  const follow = state => {
+    const row = data[Number(state?.activeIndex)]
+
+    onHover(row ? row.at : null)
+  }
+  const mark = hoveredRow && <ReferenceLine x={hoveredRow.month} stroke="#9e9e9e" />
+
   const plot = asBars
-    ? <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+    ? <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onMouseMove={follow} onMouseLeave={() => onHover(null)}>
       <CartesianGrid strokeDasharray="3 3" vertical={false} />
       <XAxis dataKey="month" tick={{ fontSize: 12 }} interval="preserveStartEnd" minTickGap={16} />
       {barsAxis}
       <Tooltip content={<EvolutionTooltip series={chart.series} projected={now} />} cursor={{ fill: "rgba(0, 0, 0, .06)" }} />
       <ReferenceLine y={0} stroke="#9e9e9e" />
+      {mark}
       <Bar dataKey="spent_drawn" isAnimationActive={false} maxBarSize={24}>
         {data.map(row => {
           const barColor = pointColor("spent", row.spent_value, chart.series[0].color)
@@ -254,13 +265,14 @@ function EvolutionChart({ chart, now, shown, log }) {
         })}
       </Bar>
     </BarChart>
-    : <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+    : <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onMouseMove={follow} onMouseLeave={() => onHover(null)}>
       <defs>{gradients}</defs>
       <CartesianGrid strokeDasharray="3 3" vertical={false} />
       <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
       {lineAxis}
       <Tooltip content={<EvolutionTooltip series={chart.series} projected={now} />} />
       {negative && <ReferenceLine y={0} stroke="#9e9e9e" />}
+      {mark}
       {chart.series.map(({ key, label, color }) => <Line key={key} type="linear" dataKey={key} name={label} stroke={stroke(key, color)} strokeWidth={2} dot={dot(key, color)} activeDot={activeDot(key, color)} connectNulls={false} isAnimationActive={false} />)}
       {chart.series.map(({ key, label, color }) => <Line key={`${key}_projected`} type="linear" dataKey={`${key}_projected`} name={label} stroke={stroke(key, color, "_projected")} strokeWidth={2} strokeDasharray="4 4" dot={dot(key, color, "_projected")} activeDot={activeDot(key, color, "_projected")} connectNulls={false} isAnimationActive={false} />)}
     </LineChart>
@@ -268,13 +280,18 @@ function EvolutionChart({ chart, now, shown, log }) {
   return <Box sx={{ minWidth: 0 }}>
     <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: ".25rem" }}>{chart.title}</Typography>
     <ResponsiveContainer width="100%" height={200}>{plot}</ResponsiveContainer>
-    <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".25rem 1rem", fontSize: ".85rem" }}>
+    <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignContent: "flex-start", gap: ".25rem 1rem", fontSize: ".85rem", minHeight: "2.9rem" }}>
+      {hovered && <span style={{ fontWeight: 700 }}>{monthLabel(`${hovered}-01`)}{hovered > now && " · projected"}</span>}
       {chart.series.map(({ key, label, color }) => {
-        const last = [...chart.data].reverse().find(row => row[key] !== null && row.at <= shown)?.[key]
+        // With a month under the cursor, its value (a dash where the chart has none); otherwise the one of the month on the screen.
+        const value = hovered
+          ? hoveredRow?.[`${key}_value`]
+          : [...chart.data].reverse().find(row => row[key] !== null && row.at <= shown)?.[key]
+        const refund = hovered && key === "spent" && value < 0 ? " · refund" : ""
 
         return <Box key={key} sx={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: key === "budget" && last !== undefined ? budgetColor(last) : color, flex: "none" }} />
-          <span>{label}{last !== undefined && ` · ${numberFormat(last, 2, "$")}`}</span>
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: key === "budget" && value != null ? budgetColor(value) : color, flex: "none" }} />
+          <span>{label}{value != null ? ` · ${numberFormat(value, 2, "$")}` : (hovered ? " · –" : "")}{refund}</span>
         </Box>
       })}
     </Box>
@@ -297,6 +314,8 @@ const EVOLUTION_GRID = {
 
 /** The month by month evolution, asked to `GET /history` when the tab opens. */
 function Evolution({ month, shown, log }) {
+  // The month under the cursor in any of the charts (`YYYY-MM`), shared by the three.
+  const [hovered, setHovered] = useState(null)
   const navigate = useNavigate()
   const [history, setHistory] = useState({ loading: true, error: false, months: [] })
 
@@ -325,7 +344,7 @@ function Evolution({ month, shown, log }) {
   }
 
   return charts.length > 0
-    ? <Box sx={EVOLUTION_GRID}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} now={standardDate().slice(0, 7)} shown={shown} log={log && chart.key !== "balance"} />)}</Box>
+    ? <Box sx={EVOLUTION_GRID}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} now={standardDate().slice(0, 7)} shown={shown} log={log && chart.key !== "balance"} hovered={hovered} onHover={setHovered} />)}</Box>
     : <Typography>Nothing to show.</Typography>
 }
 
