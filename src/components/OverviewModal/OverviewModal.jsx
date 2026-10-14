@@ -209,8 +209,8 @@ const CATEGORIES_SIZE = {
   content: { height: `min(420px, calc(100dvh - ${CHROME}))`, minHeight: 220 },
 }
 
-// Evolution has no second row of buttons, so its chrome is shorter.
-const EVOLUTION_CHROME = "14rem"
+// Evolution has a second row of buttons too (up to the month or all of it), so its chrome is the same.
+const EVOLUTION_CHROME = CHROME
 
 const EVOLUTION_SIZE = {
   width: "min(calc(100vw - 1rem), 1100px)",
@@ -220,6 +220,8 @@ const EVOLUTION_SIZE = {
 
 export function OverviewModal({ state, setState }) {
   const [tab, setTab] = useState(() => localStorage.getItem("overviewTab") === "evolution" ? "evolution" : "categories")
+  // Whether the evolution shows every month (the projection included) or stops at the month on the screen.
+  const [evolutionAll, setEvolutionAll] = useState(() => localStorage.getItem("evolutionAll") === "true")
 
   const bars = useMemo(() => overviewBars(state.categories, state.byAmount), [state.categories, state.byAmount])
   const slices = useMemo(() => overviewSlices(state.categories, state.byAmount), [state.categories, state.byAmount])
@@ -231,6 +233,11 @@ export function OverviewModal({ state, setState }) {
   function selectTab(value) {
     localStorage.setItem("overviewTab", value)
     setTab(value)
+  }
+
+  function selectEvolutionRange(value) {
+    localStorage.setItem("evolutionAll", value)
+    setEvolutionAll(value)
   }
 
   function toggle(key, value) {
@@ -257,6 +264,10 @@ export function OverviewModal({ state, setState }) {
             <ToggleButton label="Categories" selected={tab === "categories"} onClick={() => selectTab("categories")} />
             <ToggleButton label="Evolution" selected={tab === "evolution"} onClick={() => selectTab("evolution")} />
           </Box>
+          {tab === "evolution" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+            <ToggleButton color="success" label="Up to month" selected={!evolutionAll} onClick={() => selectEvolutionRange(false)} />
+            <ToggleButton color="success" label="All" selected={evolutionAll} onClick={() => selectEvolutionRange(true)} />
+          </Box>}
           {tab === "categories" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton color="success" label="By Amount" selected={state.byAmount} onClick={() => toggle("byAmount", true)} />
             <ToggleButton color="success" label="By Expenses" selected={!state.byAmount} onClick={() => toggle("byAmount", false)} />
@@ -265,7 +276,7 @@ export function OverviewModal({ state, setState }) {
           </Box>}
         </Box>
         <CardContent sx={{ ...size.content, overflowY: tab === "evolution" ? "auto" : "hidden", pt: 0 }}>
-          {tab === "evolution" ? <Evolution month={shownMonth} /> : state.overviewPie
+          {tab === "evolution" ? <Evolution month={evolutionAll ? null : shownMonth} /> : state.overviewPie
             ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : empty
             : bars.length > 0 ? <CategoryBars bars={bars} byAmount={state.byAmount} /> : empty}
         </CardContent>

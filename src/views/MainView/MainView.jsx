@@ -48,6 +48,7 @@ export function MainView({ }) {
     date: localStorage.getItem("date"),
     sources: [],
     summary: null,
+    range: null,
     rates: {},
     rateModal: false,
     rate: null,
@@ -85,6 +86,7 @@ export function MainView({ }) {
       sources: res.data.expenses,
       categories: res.data.categories,
       summary: res.data.summary ?? null,
+      range: res.data.range ?? null,
       rates: res.data.rates ?? {},
     })))
     .catch(err => {
@@ -107,6 +109,11 @@ export function MainView({ }) {
     const [year, month] = state.date.split("-").map(Number)
 
     return { year, month: month - 1 }
+  }
+
+  /** The first and the last month the user can go to (`YYYY-MM`), or `null` until `GET /data` has sent the range. */
+  function monthBounds() {
+    return state.range ? { min: state.range.first.slice(0, 7), max: state.range.last.slice(0, 7) } : null
   }
 
   function selectMonth(year, month) {
@@ -262,6 +269,13 @@ export function MainView({ }) {
   // Currencies other than pesos used by a source: each gets a chip with its exchange rate.
   const foreignCurrencies = [...new Set(state.sources.map(source => source.currency).filter(currency => currency && currency !== "MXN"))]
 
+  // The arrows stop at the first and the last month with expenses (the last counts the instalments still to bill).
+  const bounds = monthBounds()
+  const shown = shownMonth()
+  const shownKey = `${shown.year}-${String(shown.month + 1).padStart(2, "0")}`
+  const atFirstMonth = bounds !== null && shownKey <= bounds.min
+  const atLastMonth = bounds !== null && shownKey >= bounds.max
+
   return <>
     {state.loading && <div className="expenses-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
     <Box sx={{ width: "100vw", height: "fit-content" }}>
@@ -292,9 +306,9 @@ export function MainView({ }) {
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={<Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "wrap", gap: { xs: ".25rem", sm: ".5rem" } }}>
-            <Button size="small" color="secondary" variant="contained" aria-label="Previous month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate()} disabled={state.editing}><ChevronLeft fontSize="small" /></Button>
-            <MonthPicker {...shownMonth()} onSelect={selectMonth} disabled={state.editing} />
-            <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate(true)} disabled={state.editing}><ChevronRight fontSize="small" /></Button>
+            <Button size="small" color="secondary" variant="contained" aria-label="Previous month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate()} disabled={state.editing || atFirstMonth}><ChevronLeft fontSize="small" /></Button>
+            <MonthPicker {...shownMonth()} min={monthBounds()?.min} max={monthBounds()?.max} onSelect={selectMonth} disabled={state.editing} />
+            <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate(true)} disabled={state.editing || atLastMonth}><ChevronRight fontSize="small" /></Button>
             {env_name && <Chip size="small" label={env_name} sx={{ background: "#c62828", color: "#fff", fontWeight: 500 }} />}
             <Button size="small" color="error" variant="contained" aria-label="Logout" sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 }, height: 30 }} onClick={logout}>
               <Logout fontSize="small" sx={{ display: { xs: "block", sm: "none" } }} />

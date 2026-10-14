@@ -6,13 +6,22 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 const LONGEST = ["September", "November", "December", "February"]
 
-/** Nothing is billed beyond the month after the current one, so later months cannot be picked. */
-function canSelect(year, month, now = new Date()) {
-  return new Date(year, month, 1) <= new Date(now.getFullYear(), now.getMonth() + 1, 1)
+/**
+ * Whether a month can be picked: it must be inside `min` and `max` (`YYYY-MM`, the first and last month with expenses
+ * that `GET /data` sends as `range`). Until the range is known, nothing after the month following the current one.
+ */
+function canSelect(year, month, min = null, max = null, now = new Date()) {
+  const key = `${year}-${String(month + 1).padStart(2, "0")}`
+
+  if (!min || !max) {
+    return new Date(year, month, 1) <= new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  }
+
+  return key >= min && key <= max
 }
 
 /** The month and year as a button; it opens a card with the year arrows and the twelve months. */
-export function MonthPicker({ year, month, onSelect, disabled = false }) {
+export function MonthPicker({ year, month, onSelect, min = null, max = null, disabled = false }) {
   const [anchor, setAnchor] = useState(null)
   const [shownYear, setShownYear] = useState(year)
 
@@ -25,6 +34,11 @@ export function MonthPicker({ year, month, onSelect, disabled = false }) {
     setAnchor(null)
     onSelect(shownYear, selected)
   }
+
+  // The year arrows stop at the years of the first and the last month.
+  const bounded = Boolean(min && max)
+  const hasPreviousYear = !bounded || shownYear - 1 >= +min.slice(0, 4)
+  const hasNextYear = bounded ? shownYear + 1 <= +max.slice(0, 4) : canSelect(shownYear + 1, 0)
 
   return <>
     <Button
@@ -50,9 +64,9 @@ export function MonthPicker({ year, month, onSelect, disabled = false }) {
       slotProps={{ paper: { sx: { borderRadius: "1rem", p: 1.5, width: 280 } } }}
     >
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-        <IconButton size="small" onClick={() => setShownYear(shownYear - 1)}><ChevronLeft /></IconButton>
+        <IconButton size="small" onClick={() => setShownYear(shownYear - 1)} disabled={!hasPreviousYear}><ChevronLeft /></IconButton>
         <Typography sx={{ fontWeight: "bold" }}>{shownYear}</Typography>
-        <IconButton size="small" onClick={() => setShownYear(shownYear + 1)} disabled={!canSelect(shownYear + 1, 0)}><ChevronRight /></IconButton>
+        <IconButton size="small" onClick={() => setShownYear(shownYear + 1)} disabled={!hasNextYear}><ChevronRight /></IconButton>
       </Box>
       <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0.5 }}>
         {MONTHS.map((name, index) => <Button
@@ -60,7 +74,7 @@ export function MonthPicker({ year, month, onSelect, disabled = false }) {
           size="small"
           color={shownYear === year && index === month ? "primary" : "inherit"}
           variant={shownYear === year && index === month ? "contained" : "text"}
-          disabled={!canSelect(shownYear, index)}
+          disabled={!canSelect(shownYear, index, min, max)}
           onClick={() => select(index)}
         >
           {name.slice(0, 3)}
