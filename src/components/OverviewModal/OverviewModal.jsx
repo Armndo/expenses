@@ -182,17 +182,9 @@ function EvolutionChart({ chart, now, shown, log }) {
     return copy
   })
 
-  // The budget changes colour with its sign: a gradient with a hard stop at the zero of the line (top = highest value).
-  // (On a log axis the sign is not in the position, and the gradient along the line below paints it.)
-  const budget = data.map(row => row.budget).filter(value => value !== null && value !== undefined)
-  const budgetMixed = !(log && yAxis) && budget.length > 0 && Math.min(...budget) < 0 && Math.max(...budget) > 0
-  const zeroAt = budgetMixed ? Math.max(...budget) / (Math.max(...budget) - Math.min(...budget)) : null
-  const gradientId = `budget-sign-${chart.key}`
-
   // The gradients along each line that has a negative month, one for the real part and one for the projection: they paint
-  // green (red, the budget) the segments that touch it. On a linear axis the budget does not need one: its colour goes by the
-  // sign of the position (above).
-  const negativeKeys = chart.series.filter(({ key }) => (log && yAxis || key !== "budget") && chart.data.some(row => row[key] < 0)).map(({ key }) => key)
+  // red (the budget) or green (the rest) the segments that touch it, in the same way on a linear and on a log axis.
+  const negativeKeys = chart.series.filter(({ key }) => chart.data.some(row => row[key] < 0)).map(({ key }) => key)
   const alongId = (key, suffix) => `negative-${chart.key}-${key}${suffix}`
   const gradients = negativeKeys.flatMap(key => ["", "_projected"].map(suffix => {
     const points = data.flatMap((row, index) => row[`${key}${suffix}`] == null ? [] : [[index, row[`${key}_value`] < 0]])
@@ -201,15 +193,7 @@ function EvolutionChart({ chart, now, shown, log }) {
   }))
 
   function stroke(key, color, suffix = "") {
-    if (negativeKeys.includes(key)) {
-      return `url(#${alongId(key, suffix)})`
-    }
-
-    if (key !== "budget" || budget.length === 0) {
-      return color
-    }
-
-    return budgetMixed ? `url(#${gradientId})` : budgetColor(budget[0])
+    return negativeKeys.includes(key) ? `url(#${alongId(key, suffix)})` : color
   }
 
   // The dots are drawn by hand: on a dotted line they would inherit the dash and come out as broken circles. A real month
@@ -243,13 +227,7 @@ function EvolutionChart({ chart, now, shown, log }) {
     <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: ".25rem" }}>{chart.title}</Typography>
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <defs>
-          {budgetMixed && <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset={zeroAt} stopColor={BUDGET_COLORS.positive} />
-            <stop offset={zeroAt} stopColor={BUDGET_COLORS.negative} />
-          </linearGradient>}
-          {gradients}
-        </defs>
+        <defs>{gradients}</defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
         {yAxis
