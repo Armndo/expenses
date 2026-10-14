@@ -193,14 +193,18 @@ const EVOLUTION_SIZE = {
 }
 
 export function OverviewModal({ state, setState }) {
-  const [tab, setTab] = useState("categories")
+  const [tab, setTab] = useState(() => localStorage.getItem("overviewTab") === "evolution" ? "evolution" : "categories")
 
   const bars = useMemo(() => overviewBars(state.categories, state.byAmount), [state.categories, state.byAmount])
   const slices = useMemo(() => overviewSlices(state.categories, state.byAmount), [state.categories, state.byAmount])
 
   function closeModal() {
-    setTab("categories")
     setState(prev => ({ ...prev, overview: false }))
+  }
+
+  function selectTab(value) {
+    localStorage.setItem("overviewTab", value)
+    setTab(value)
   }
 
   function toggle(key, value) {
@@ -221,8 +225,8 @@ export function OverviewModal({ state, setState }) {
         <CardHeader title="Overview" sx={{ flex: "none" }} />
         <Box sx={{ px: "1rem", pb: "1rem", display: "grid", gap: ".5rem", flex: "none" }}>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-            <ToggleButton label="Categories" selected={tab === "categories"} onClick={() => setTab("categories")} />
-            <ToggleButton label="Evolution" selected={tab === "evolution"} onClick={() => setTab("evolution")} />
+            <ToggleButton label="Categories" selected={tab === "categories"} onClick={() => selectTab("categories")} />
+            <ToggleButton label="Evolution" selected={tab === "evolution"} onClick={() => selectTab("evolution")} />
           </Box>
           {tab === "categories" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton color="success" label="By Amount" selected={state.byAmount} onClick={() => toggle("byAmount", true)} />
