@@ -114,6 +114,81 @@ export function compactMoney(value) {
   return `${sign}$${text}`
 }
 
+/** Up to this amount the log scale of the evolution charts is linear; above it, logarithmic. */
+export const LOG_FROM = 1000
+
+/**
+ * The log scale of the evolution charts, made of two pieces: linear from `LOG_FROM` down to minus infinity (zeros and
+ * negative values, a refund or a budget exceeded, keep their size) and logarithmic above it, continuing the line without a
+ * jump or a change of slope at `LOG_FROM`. The charts draw this number on a linear axis; `unlogScale` is its inverse.
+ */
+export function logScale(value) {
+  return value <= LOG_FROM ? value : LOG_FROM * (1 + Math.log(value / LOG_FROM))
+}
+
+export function unlogScale(position) {
+  return position <= LOG_FROM ? position : LOG_FROM * Math.exp(position / LOG_FROM - 1)
+}
+
+/** Round marks for a linear axis from `min` to `max` (about `count` of them, steps of 1, 2, 2.5, 5 or 10 times a power of ten). */
+function linearTicks(min, max, count = 5) {
+  const span = max - min || Math.abs(max) || 1
+  const raw = span / (count - 1)
+  const magnitude = 10 ** Math.floor(Math.log10(raw))
+  const fraction = raw / magnitude
+  const step = magnitude * (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10)
+  const marks = []
+
+  for (let mark = Math.ceil(min / step) * step; mark <= max + step * 1e-9; mark += step) {
+    marks.push(Math.round(mark / step) * step)
+  }
+
+  return { marks, step }
+}
+
+/**
+ * The marks of a log axis that cover `min` to `max`: round marks (and zero) up to `LOG_FROM`, then the powers of ten (10k,
+ * 100k...) up to the one that reaches `max`.
+ */
+function logTicks(min, max) {
+  const marks = new Set([0])
+
+  if (min < LOG_FROM) {
+    linearTicks(min, Math.min(max, LOG_FROM), 3).marks.forEach(mark => marks.add(mark))
+  }
+
+  if (max >= LOG_FROM) {
+    marks.add(LOG_FROM)
+  }
+
+  for (let power = 4; max > 0 && 10 ** (power - 1) < max; power++) {
+    marks.add(10 ** power)
+  }
+
+  return [...marks].sort((a, b) => a - b)
+}
+
+/**
+ * The Y axis of an evolution chart from its lowest and highest value, as `{ low, high, ticks }`, or `null` when there is
+ * nothing to lay out (the chart library then picks it). It goes from the lowest to the highest value and out to the next
+ * mark only when that one is close (within 15% of the span): the library rounds the ends outward and would leave a lot of
+ * empty room (-$35k for a lowest value of -$3.9k). It only has the marks inside it. On a log axis (`log`) the numbers are
+ * positions of `logScale`, to be drawn on a linear axis.
+ */
+export function chartAxis(min, max, log = false) {
+  const { marks, step } = log ? { marks: logTicks(min, max), step: null } : linearTicks(min, max)
+  const near = (mark, value) => Math.abs((log ? logScale(mark) - logScale(value) : mark - value)) <= (log ? logScale(max) - logScale(min) : max - min) * 0.15
+  const above = log ? marks.find(mark => mark > max) : Math.ceil(max / step) * step
+  const below = log ? [...marks].reverse().find(mark => mark < min) : Math.floor(min / step) * step
+  const low = below !== undefined && near(below, min) ? below : min
+  const high = above !== undefined && near(above, max) ? above : max
+  const inside = marks.filter(mark => mark >= low && mark <= high)
+  const ticks = [...new Set([...(low < min ? [low] : []), ...inside, ...(high > max ? [high] : [])])].sort((a, b) => a - b)
+  const place = log ? logScale : value => value
+
+  return max > min && ticks.length > 1 ? { low: place(low), high: place(high), ticks: ticks.map(place) } : null
+}
+
 /** `2026-09-01` as `Sep 26`. */
 export function monthLabel(month) {
   const [year, number] = month.split("-")
@@ -123,7 +198,7 @@ export function monthLabel(month) {
 
 /**
  * The charts of the evolution from the months of `GET /history`, as `[{ key, title, series, data }]` where `series` is
- * `[{ key, label, color }]` and `data` has one `{ month, <series key>: value | null }` per month:
+ * `[{ key, label, color }]` and `data` has one `{ month, at, <series key>: value | null }` per month (`at` is `YYYY-MM`):
  * 1. Spent, every month (it exists before the balance start).
  * 2. Balance and Debit, from the first month with a balance.
  * 3. Instalments and Budget, from the first month with either (the budget appears when it starts).
@@ -135,6 +210,7 @@ export function evolutionCharts(months, upTo = null) {
 
   const rows = monthsUpTo(months, upTo).map(item => ({
     month: monthLabel(item.month),
+    at: item.month.slice(0, 7),
     spent: number(item.spent),
     balance: number(item.total_money),
     debit: number(item.cash),
@@ -156,7 +232,7 @@ export function evolutionCharts(months, upTo = null) {
     }
 
     const first = rows.findIndex(row => present.some(([name]) => row[name] !== null))
-    const data = rows.slice(first).map(row => ({ month: row.month, ...Object.fromEntries(present.map(([name]) => [name, row[name]])) }))
+    const data = rows.slice(first).map(row => ({ month: row.month, at: row.at, ...Object.fromEntries(present.map(([name]) => [name, row[name]])) }))
 
     return [{ key, title, series: present.map(([name, label]) => ({ key: name, label, color: EVOLUTION_COLORS[name] })), data }]
   })

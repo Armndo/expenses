@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { BUDGET_COLORS, budgetColor, compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices, standardDate } from "@/utils/functions"
+import { BUDGET_COLORS, budgetColor, chartAxis, compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices, standardDate, logScale, unlogScale } from "@/utils/functions"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
@@ -93,17 +93,118 @@ function CategoryPie({ slices, byAmount }) {
 }
 
 /** One line chart of the evolution; a `null` leaves a gap and the zero line shows when something is negative. */
-function EvolutionChart({ chart }) {
+/** The colour of a month of a line: the budget by its sign; a negative month (a refund) in the colour of the case (green); the line's own otherwise. */
+function pointColor(key, value, color) {
+  if (key === "budget") {
+    return budgetColor(value)
+  }
+
+  return value < 0 ? BUDGET_COLORS.positive : color
+}
+
+/** The tooltip of a month: every line with its real value, and a note when the month is a projection or a refund. */
+function EvolutionTooltip({ active, payload, label, series, projected }) {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  const row = payload[0].payload
+
+  return <div style={{ background: "#fff", border: "1px solid #ccc", padding: ".5rem .75rem", fontSize: ".85rem" }}>
+    <div style={{ fontWeight: 500 }}>{label}{row.at > projected && " · projected"}</div>
+    {series.map(({ key, label: name, color }) => {
+      const value = row[`${key}_value`]
+
+      return value == null ? null : <div key={key} style={{ color: pointColor(key, value, color) }}>{name} : {numberFormat(value, 2, "$")}{key === "spent" && value < 0 && " · refund"}</div>
+    })}
+  </div>
+}
+
+/** The colour of the line where a negative value is (on a log axis, drawn as its absolute value): red for the budget, green for the rest. */
+function negativeColor(key) {
+  return key === "budget" ? BUDGET_COLORS.negative : BUDGET_COLORS.positive
+}
+
+/**
+ * A gradient along the line that paints green (red, for the budget) the segments that touch a negative month: on a log
+ * axis a negative value is drawn as its absolute value, and the colour is what says it is negative; on a linear axis it
+ * is drawn where it is, and the colour marks it. `points` are
+ * `[index, negative]` of the months the line has a value in, in order; the line is as wide as its first and last one.
+ */
+function negativeGradient(id, key, color, points) {
+  const first = points[0][0]
+  const width = points[points.length - 1][0] - first || 1
+  const stops = []
+
+  points.slice(0, -1).forEach(([index, negative], position) => {
+    const [next, nextNegative] = points[position + 1]
+    const paint = negative || nextNegative ? negativeColor(key) : color
+
+    stops.push(<stop key={`${index}-a`} offset={(index - first) / width} stopColor={paint} />, <stop key={`${index}-b`} offset={(next - first) / width} stopColor={paint} />)
+  })
+
+  return <linearGradient key={id} id={id} x1="0" y1="0" x2="1" y2="0">{stops}</linearGradient>
+}
+
+/**
+ * One chart. The months after `now` (`YYYY-MM`, the real current month) are a projection and are drawn with a dotted
+ * line, joined to the last real month; the legend shows the value of the month on the screen (`shown`). With `log` the
+ * Y axis is a log scale (linear up to `LOG_FROM`, logarithmic above), for the charts whose values are very far apart;
+ * a negative value is drawn as its absolute value, in another colour.
+ */
+function EvolutionChart({ chart, now, shown, log }) {
   const values = chart.data.flatMap(row => chart.series.map(({ key }) => row[key])).filter(value => value !== null)
-  const negative = values.some(value => value < 0)
+  // On a log axis a negative value has no place: it is drawn as its absolute value (green, or red for the budget).
+  const drawn = log ? values.map(Math.abs) : values
+  const negative = !log && values.some(value => value < 0)
+  const yAxis = chartAxis(Math.min(...drawn), Math.max(...drawn), log)
+  // On a log axis the lines are drawn at the position of their value (`logScale`) and the real value travels in `<key>_value`.
+  const place = log && yAxis ? value => logScale(Math.abs(value)) : value => value
+
+  // Each line is split in two: the real months (`key`) and the projected ones (`key_projected`, from the current month on).
+  const data = chart.data.map(row => {
+    const copy = { ...row }
+
+    chart.series.forEach(({ key }) => {
+      const value = row[key]
+      copy[`${key}_value`] = value
+      copy[key] = value === null ? null : place(value)
+
+      if (row.at >= now) {
+        copy[`${key}_projected`] = copy[key]
+      }
+
+      if (row.at > now) {
+        copy[key] = null
+      }
+    })
+
+    return copy
+  })
 
   // The budget changes colour with its sign: a gradient with a hard stop at the zero of the line (top = highest value).
-  const budget = chart.data.map(row => row.budget).filter(value => value !== null && value !== undefined)
-  const budgetMixed = budget.length > 0 && Math.min(...budget) < 0 && Math.max(...budget) > 0
+  // (On a log axis the sign is not in the position, and the gradient along the line below paints it.)
+  const budget = data.map(row => row.budget).filter(value => value !== null && value !== undefined)
+  const budgetMixed = !(log && yAxis) && budget.length > 0 && Math.min(...budget) < 0 && Math.max(...budget) > 0
   const zeroAt = budgetMixed ? Math.max(...budget) / (Math.max(...budget) - Math.min(...budget)) : null
   const gradientId = `budget-sign-${chart.key}`
 
-  function stroke(key, color) {
+  // The gradients along each line that has a negative month, one for the real part and one for the projection: they paint
+  // green (red, the budget) the segments that touch it. On a linear axis the budget does not need one: its colour goes by the
+  // sign of the position (above).
+  const negativeKeys = chart.series.filter(({ key }) => (log && yAxis || key !== "budget") && chart.data.some(row => row[key] < 0)).map(({ key }) => key)
+  const alongId = (key, suffix) => `negative-${chart.key}-${key}${suffix}`
+  const gradients = negativeKeys.flatMap(key => ["", "_projected"].map(suffix => {
+    const points = data.flatMap((row, index) => row[`${key}${suffix}`] == null ? [] : [[index, row[`${key}_value`] < 0]])
+
+    return points.length > 1 ? negativeGradient(alongId(key, suffix), key, key === "budget" ? BUDGET_COLORS.positive : chart.series.find(item => item.key === key).color, points) : null
+  }))
+
+  function stroke(key, color, suffix = "") {
+    if (negativeKeys.includes(key)) {
+      return `url(#${alongId(key, suffix)})`
+    }
+
     if (key !== "budget" || budget.length === 0) {
       return color
     }
@@ -111,33 +212,58 @@ function EvolutionChart({ chart }) {
     return budgetMixed ? `url(#${gradientId})` : budgetColor(budget[0])
   }
 
-  function dot(key) {
-    return key === "budget"
-      ? ({ cx, cy, payload }) => payload[key] == null || cx == null || cy == null ? null : <circle key={`${key}-${payload.month}`} cx={cx} cy={cy} r={3} fill={budgetColor(payload[key])} />
-      : { r: 3 }
+  // The dots are drawn by hand: on a dotted line they would inherit the dash and come out as broken circles. A real month
+  // is a filled dot and a projected one a hollow dot (white centre); the current month is real, so the projected line skips it.
+  function dot(key, color, suffix = "") {
+    return ({ cx, cy, payload }) => {
+      const value = payload[`${key}${suffix}`]
+
+      if (value == null || cx == null || cy == null || (suffix && payload.at <= now)) {
+        return null
+      }
+
+      const border = pointColor(key, payload[`${key}_value`], color)
+
+      return <circle key={`${key}${suffix}-${payload.month}`} cx={cx} cy={cy} r={3} fill={suffix ? "#fff" : border} stroke={border} strokeWidth={1.5} />
+    }
+  }
+
+  // The point under the cursor: the library paints it with the colour of the line, which is not the one of the case.
+  function activeDot(key, color, suffix = "") {
+    return ({ cx, cy, payload }) => {
+      if (payload[`${key}${suffix}`] == null || cx == null || cy == null || (suffix && payload.at <= now)) {
+        return null
+      }
+
+      return <circle key={`${key}${suffix}-active-${payload.month}`} cx={cx} cy={cy} r={5} fill={pointColor(key, payload[`${key}_value`], color)} stroke="#fff" strokeWidth={2} />
+    }
   }
 
   return <Box sx={{ minWidth: 0 }}>
     <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: ".25rem" }}>{chart.title}</Typography>
     <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={chart.data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        {budgetMixed && <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+      <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <defs>
+          {budgetMixed && <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset={zeroAt} stopColor={BUDGET_COLORS.positive} />
             <stop offset={zeroAt} stopColor={BUDGET_COLORS.negative} />
-          </linearGradient>
-        </defs>}
+          </linearGradient>}
+          {gradients}
+        </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" tick={{ fontSize: 12 }} padding={{ left: 16, right: 16 }} interval="preserveStartEnd" minTickGap={16} />
-        <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />
-        <Tooltip formatter={value => numberFormat(value, 2, "$")} />
+        {yAxis
+          ? <YAxis width="auto" tick={{ fontSize: 12 }} interval={0} ticks={yAxis.ticks} domain={[yAxis.low, yAxis.high]} padding={{ top: 6, bottom: 6 }} tickFormatter={position => compactMoney(log ? unlogScale(position) : position)} />
+          : <YAxis width="auto" tick={{ fontSize: 12 }} domain={["auto", "auto"]} tickFormatter={compactMoney} />}
+        <Tooltip content={<EvolutionTooltip series={chart.series} projected={now} />} />
         {negative && <ReferenceLine y={0} stroke="#9e9e9e" />}
-        {chart.series.map(({ key, label, color }) => <Line key={key} type="monotone" dataKey={key} name={label} stroke={stroke(key, color)} strokeWidth={2} dot={dot(key)} connectNulls={false} isAnimationActive={false} />)}
+        {chart.series.map(({ key, label, color }) => <Line key={key} type="monotone" dataKey={key} name={label} stroke={stroke(key, color)} strokeWidth={2} dot={dot(key, color)} activeDot={activeDot(key, color)} connectNulls={false} isAnimationActive={false} />)}
+        {chart.series.map(({ key, label, color }) => <Line key={`${key}_projected`} type="monotone" dataKey={`${key}_projected`} name={label} stroke={stroke(key, color, "_projected")} strokeWidth={2} strokeDasharray="4 4" dot={dot(key, color, "_projected")} activeDot={activeDot(key, color, "_projected")} connectNulls={false} isAnimationActive={false} />)}
       </LineChart>
     </ResponsiveContainer>
     <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".25rem 1rem", fontSize: ".85rem" }}>
       {chart.series.map(({ key, label, color }) => {
-        const last = [...chart.data].reverse().find(row => row[key] !== null)?.[key]
+        const last = [...chart.data].reverse().find(row => row[key] !== null && row.at <= shown)?.[key]
 
         return <Box key={key} sx={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
           <span style={{ width: 10, height: 10, borderRadius: 2, background: key === "budget" && last !== undefined ? budgetColor(last) : color, flex: "none" }} />
@@ -163,7 +289,7 @@ const EVOLUTION_GRID = {
 }
 
 /** The month by month evolution, asked to `GET /history` when the tab opens. */
-function Evolution({ month }) {
+function Evolution({ month, shown, log }) {
   const navigate = useNavigate()
   const [history, setHistory] = useState({ loading: true, error: false, months: [] })
 
@@ -192,7 +318,7 @@ function Evolution({ month }) {
   }
 
   return charts.length > 0
-    ? <Box sx={EVOLUTION_GRID}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} />)}</Box>
+    ? <Box sx={EVOLUTION_GRID}>{charts.map(chart => <EvolutionChart key={chart.key} chart={chart} now={standardDate().slice(0, 7)} shown={shown} log={log && chart.key !== "balance"} />)}</Box>
     : <Typography>Nothing to show.</Typography>
 }
 
@@ -222,6 +348,8 @@ export function OverviewModal({ state, setState }) {
   const [tab, setTab] = useState(() => localStorage.getItem("overviewTab") === "evolution" ? "evolution" : "categories")
   // Whether the evolution shows every month (the projection included) or stops at the month on the screen.
   const [evolutionAll, setEvolutionAll] = useState(() => localStorage.getItem("evolutionAll") === "true")
+  // Whether the evolution charts with very different values (Spent, Instalments and Budget) use a log scale.
+  const [evolutionLog, setEvolutionLog] = useState(() => localStorage.getItem("evolutionLog") === "true")
 
   const bars = useMemo(() => overviewBars(state.categories, state.byAmount), [state.categories, state.byAmount])
   const slices = useMemo(() => overviewSlices(state.categories, state.byAmount), [state.categories, state.byAmount])
@@ -238,6 +366,11 @@ export function OverviewModal({ state, setState }) {
   function selectEvolutionRange(value) {
     localStorage.setItem("evolutionAll", value)
     setEvolutionAll(value)
+  }
+
+  function selectEvolutionScale(value) {
+    localStorage.setItem("evolutionLog", value)
+    setEvolutionLog(value)
   }
 
   function toggle(key, value) {
@@ -267,6 +400,8 @@ export function OverviewModal({ state, setState }) {
           {tab === "evolution" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton color="success" label="Up to month" selected={!evolutionAll} onClick={() => selectEvolutionRange(false)} />
             <ToggleButton color="success" label="All" selected={evolutionAll} onClick={() => selectEvolutionRange(true)} />
+            <ToggleButton color="success" label="Linear" selected={!evolutionLog} onClick={() => selectEvolutionScale(false)} />
+            <ToggleButton color="success" label="Log" selected={evolutionLog} onClick={() => selectEvolutionScale(true)} />
           </Box>}
           {tab === "categories" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton color="success" label="By Amount" selected={state.byAmount} onClick={() => toggle("byAmount", true)} />
@@ -276,7 +411,7 @@ export function OverviewModal({ state, setState }) {
           </Box>}
         </Box>
         <CardContent sx={{ ...size.content, overflowY: tab === "evolution" ? "auto" : "hidden", pt: 0 }}>
-          {tab === "evolution" ? <Evolution month={evolutionAll ? null : shownMonth} /> : state.overviewPie
+          {tab === "evolution" ? <Evolution month={evolutionAll ? null : shownMonth} shown={shownMonth} log={evolutionLog} /> : state.overviewPie
             ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : empty
             : bars.length > 0 ? <CategoryBars bars={bars} byAmount={state.byAmount} /> : empty}
         </CardContent>
