@@ -1,3 +1,15 @@
+## 0.9.0 (2026-11-09)
+
+### Feat
+
+- **manage**: manage sources and categories and overview by source
+
+### Fix
+
+- keep the page from scrolling behind a modal
+- **manage**: give the Manage modal a fixed height so it does not jump between tabs
+- **manage**: fit the Manage modal and the Overview toggles on a phone
+
 ## 0.8.0 (2026-10-13)
 
 ### Feat
