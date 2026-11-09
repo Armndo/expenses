@@ -56,11 +56,13 @@ td.transfer {
 
 .expenses-modal {
   background: #ffffff59;
-  position: absolute;
-  height: calc(100vh);
+  position: fixed;
+  height: 100vh;
+  height: 100dvh;
   width: 100vw;
   top: 0;
   left: 0;
+  overscroll-behavior: contain;
   cursor: not-allowed;
   z-index: 2;
   backdrop-filter: blur(2px);
@@ -87,11 +89,13 @@ td.transfer {
 
 .overview-modal {
   background: #ffffff59;
-  position: absolute;
-  height: calc(100vh);
+  position: fixed;
+  height: 100vh;
+  height: 100dvh;
   width: 100vw;
   top: 0;
   left: 0;
+  overscroll-behavior: contain;
   cursor: not-allowed;
   z-index: 2;
   backdrop-filter: blur(2px);
