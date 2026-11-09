@@ -1,9 +1,12 @@
 import { api_url } from "@/env"
-import { isCard, kindLabel, numberFormat } from "@/utils/functions"
+import { isCard, kindLabel, numberFormat, SPLIT_COLORS } from "@/utils/functions"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, MenuItem, Select, TextField, Typography } from "@mui/material"
 import axios from "axios"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+
+// Light indigo, the colour of the exchange rate chip of the main view.
+const RATE_BG = "#9fa8da"
 
 const CURRENCIES = ["MXN", "USD"]
 const NAME_MAX = 50
@@ -198,18 +201,27 @@ export function ManageModal({ state, setState, reload }) {
     send(axios.put(`${api_url}/categories/${category.id}`, { disabled: !category.disabled }, config()))
   }
 
-  const row = { display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap", py: ".4rem", borderBottom: "1px solid #0000001f" }
+  // Name and chips on the left (the chips go under the name when there is no room), the buttons on the right in one line.
+  const row = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem", py: ".5rem", borderBottom: "1px solid #0000001f" }
+  const info = { minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: ".25rem" }
+  const chips = { display: "flex", flexWrap: "wrap", gap: ".25rem" }
+  const actions = { flex: "none", display: "flex", gap: ".25rem" }
 
   function sourceList() {
     return <>
-      {state.sources.map(source => <Box key={source.id} sx={{ ...row, opacity: source.disabled ? 0.55 : 1 }}>
-        <Typography sx={{ fontWeight: 500 }}>{source.name}</Typography>
-        <Chip size="small" label={isCard(source) ? `${kindLabel(source)} · cutoff ${source.cutoff}` : kindLabel(source)} />
-        <Chip size="small" variant="outlined" label={source.currency} />
-        {source.disabled && <Chip size="small" color="warning" label="Disabled" />}
-        <Box sx={{ ml: "auto", display: "flex", gap: ".25rem" }}>
-          <Button size="small" onClick={() => editSource(source)} disabled={saving}>Edit</Button>
-          <Button size="small" color={source.disabled ? "success" : "warning"} onClick={() => toggleSource(source)} disabled={saving}>{source.disabled ? "Enable" : "Disable"}</Button>
+      {state.sources.map(source => <Box key={source.id} sx={row}>
+        <Box sx={{ ...info, opacity: source.disabled ? 0.55 : 1 }}>
+          <Typography sx={{ fontWeight: 500, overflowWrap: "anywhere" }}>{source.name}</Typography>
+          <Box sx={chips}>
+            <Chip size="small" sx={{ background: isCard(source) ? SPLIT_COLORS.credit : SPLIT_COLORS.debit }} label={kindLabel(source)} />
+            {isCard(source) && <Chip size="small" variant="outlined" label={`Cutoff ${source.cutoff}`} />}
+            {source.currency !== "MXN" && <Chip size="small" sx={{ background: RATE_BG }} label={source.currency} />}
+            {source.disabled && <Chip size="small" color="warning" label="Disabled" />}
+          </Box>
+        </Box>
+        <Box sx={actions}>
+          <Button size="small" variant="outlined" onClick={() => editSource(source)} disabled={saving || source.disabled}>Edit</Button>
+          <Button size="small" variant="outlined" color={source.disabled ? "success" : "warning"} onClick={() => toggleSource(source)} disabled={saving}>{source.disabled ? "Enable" : "Disable"}</Button>
         </Box>
       </Box>)}
       {state.sources.length === 0 && <Typography>No sources yet.</Typography>}
@@ -218,14 +230,16 @@ export function ManageModal({ state, setState, reload }) {
 
   function categoryList() {
     return <>
-      {state.categories.map(category => <Box key={category.id} sx={{ ...row, opacity: category.disabled ? 0.55 : 1 }}>
-        <span style={{ width: 14, height: 14, borderRadius: 3, background: category.color ?? "#9e9e9e", flex: "none" }} />
-        <Typography sx={{ fontWeight: 500 }}>{category.alias} {category.name}</Typography>
-        {category.order != null && <Chip size="small" variant="outlined" label={`order ${category.order}`} />}
-        {category.disabled && <Chip size="small" color="warning" label="Disabled" />}
-        <Box sx={{ ml: "auto", display: "flex", gap: ".25rem" }}>
-          <Button size="small" onClick={() => editCategory(category)} disabled={saving}>Edit</Button>
-          <Button size="small" color={category.disabled ? "success" : "warning"} onClick={() => toggleCategory(category)} disabled={saving}>{category.disabled ? "Enable" : "Disable"}</Button>
+      {state.categories.map(category => <Box key={category.id} sx={row}>
+        <Box sx={{ ...info, flexDirection: "row", alignItems: "center", gap: ".5rem", flexWrap: "nowrap", opacity: category.disabled ? 0.55 : 1 }}>
+          {category.order != null && <Typography sx={{ flex: "none", minWidth: "2ch", textAlign: "right", color: "text.secondary" }}>{category.order}.</Typography>}
+          <span style={{ width: 14, height: 14, borderRadius: 3, background: category.color ?? "#9e9e9e", flex: "none" }} />
+          <Typography sx={{ fontWeight: 500, overflowWrap: "anywhere", minWidth: 0 }}>{category.alias} {category.name}</Typography>
+          {category.disabled && <Chip size="small" color="warning" label="Disabled" />}
+        </Box>
+        <Box sx={actions}>
+          <Button size="small" variant="outlined" onClick={() => editCategory(category)} disabled={saving || category.disabled}>Edit</Button>
+          <Button size="small" variant="outlined" color={category.disabled ? "success" : "warning"} onClick={() => toggleCategory(category)} disabled={saving}>{category.disabled ? "Enable" : "Disable"}</Button>
         </Box>
       </Box>)}
       {state.categories.length === 0 && <Typography>No categories yet.</Typography>}

@@ -179,9 +179,10 @@ td {
     padding-right: 5px;
   }
 
-  /* One line for the buttons, and the same width in simple and advanced mode. */
+  /* Four equal columns for the buttons (seven do not fit in one line), so the grid is the same in simple and advanced mode. */
   .main-actions {
-    flex-wrap: nowrap !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
     gap: .25rem !important;
   }
 
@@ -189,7 +190,6 @@ td {
     min-width: 0;
     padding: 4px 6px;
     font-size: .7rem;
-    flex: 1 1 auto;
   }
 
   th > div {

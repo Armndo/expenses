@@ -10,7 +10,8 @@ const NEGATIVE = "#d32f2f"
 
 /** A button that is on (contained) or off (outlined): both options of a pair are always visible, so it works as a toggle. */
 function ToggleButton({ label, selected, color = "primary", onClick }) {
-  return <Button size="small" color={color} variant={selected ? "contained" : "outlined"} onClick={onClick}>{label}</Button>
+  // Tighter on a phone, so that By Source, By Type, Bars and Pie fit in one row.
+  return <Button size="small" color={color} variant={selected ? "contained" : "outlined"} onClick={onClick} sx={{ minWidth: 0, px: { xs: ".6rem", sm: "10px" } }}>{label}</Button>
 }
 
 /** Value of a bar or slice: money by amount, a count by expenses. */
@@ -461,11 +462,19 @@ export function OverviewModal({ state, setState }) {
             <ToggleButton color="success" label="Linear" selected={!evolutionLog} onClick={() => selectEvolutionScale(false)} />
             <ToggleButton color="success" label="Log" selected={evolutionLog} onClick={() => selectEvolutionScale(true)} />
           </Box>}
-          {tab === "sources" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-            <ToggleButton color="success" label="By Source" selected={!byType} onClick={() => toggle("sourcesByType", false)} />
-            <ToggleButton color="success" label="By Type" selected={byType} onClick={() => toggle("sourcesByType", true)} />
-          </Box>}
-          {(tab === "categories" || tab === "sources") && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+          {tab === "sources" && <>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+              <ToggleButton color="success" label="By Source" selected={!byType} onClick={() => toggle("sourcesByType", false)} />
+              <ToggleButton color="success" label="By Type" selected={byType} onClick={() => toggle("sourcesByType", true)} />
+              <ToggleButton color="success" label="Bars" selected={!state.overviewPie} onClick={() => toggle("overviewPie", false)} />
+              <ToggleButton color="success" label="Pie" selected={state.overviewPie} onClick={() => toggle("overviewPie", true)} />
+            </Box>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+              <ToggleButton color="success" label="By Amount" selected={state.byAmount} onClick={() => toggle("byAmount", true)} />
+              <ToggleButton color="success" label="By Expenses" selected={!state.byAmount} onClick={() => toggle("byAmount", false)} />
+            </Box>
+          </>}
+          {tab === "categories" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton color="success" label="By Amount" selected={state.byAmount} onClick={() => toggle("byAmount", true)} />
             <ToggleButton color="success" label="By Expenses" selected={!state.byAmount} onClick={() => toggle("byAmount", false)} />
             <ToggleButton color="success" label="Bars" selected={!state.overviewPie} onClick={() => toggle("overviewPie", false)} />
