@@ -1,3 +1,6 @@
+import { monthlyShare } from "./monthlyShare"
+import { isCard } from "./sourceKind"
+
 /*
  * Data of the Overview: by category (bars and pie, the mirror of `domain/Overview.kt` in the app) and the month by
  * month evolution (`GET /history`, the mirror of `domain/Evolution.kt`).
@@ -42,6 +45,85 @@ export const CHIP_COLORS = {
   balance: "#bbdefb",
   budget: "#a5d6a7",
   budgetOver: "#ef9a9a",
+}
+
+/** Colours of the sources in the Sources tab, by the position of each one in the list (so they do not change from month to month). */
+const SOURCE_COLORS = ["#90caf9", "#a5d6a7", "#ffcc80", "#ce93d8", "#80cbc4", "#f48fb1", "#e6ee9c", "#b0bec5", "#ffab91", "#9fa8da"]
+
+/** The colours of the split in the Sources tab: credit (like the Credit chip), debit (like the Debit chip) and instalments. */
+export const SPLIT_COLORS = { credit: "#e1bee7", debit: "#d7ccc8", instalments: CHIP_COLORS.instalments }
+
+/**
+ * The month's spending by source, from the `GET /data` sources and the exchange rates, in pesos (a source in another currency
+ * counts with its rate, and one with no rate is left out and listed in `missing`, as the `summary` does). `items` have the
+ * keys of a category (`expenses_count`, `expenses_sum_amount`, `alias`, `color`) so `overviewBars` and `overviewSlices` draw
+ * them; `split` is how much of the total went to credit (what the cards billed in full), debit (what the debit accounts paid in
+ * full) and instalments (the share of the month, on any source), each with its `share`; `top` is the source with the most.
+ */
+export function overviewSources(sources, rates) {
+  const sum = values => values.reduce((total, value) => total + value, 0)
+  const items = []
+  const missing = []
+  const split = { credit: 0, debit: 0, instalments: 0 }
+  const counts = { credit: 0, debit: 0, instalments: 0 }
+
+  sources.forEach((source, index) => {
+    const cash = sum(source.expenses.map(expense => expense.amount))
+    const instalments = sum(source.instalments.map(item => monthlyShare(item)))
+    const count = source.expenses.length + source.instalments.length
+    const rate = source.currency === "MXN" ? 1 : rates?.[source.currency]
+
+    if (count === 0) {
+      return
+    }
+
+    if (!rate) {
+      missing.push(source)
+
+      return
+    }
+
+    split[isCard(source) ? "credit" : "debit"] += cash * rate
+    split.instalments += instalments * rate
+    counts[isCard(source) ? "credit" : "debit"] += source.expenses.length
+    counts.instalments += source.instalments.length
+
+    items.push({
+      id: source.id,
+      name: source.name,
+      alias: isCard(source) ? "💳" : "🏦",
+      color: SOURCE_COLORS[index % SOURCE_COLORS.length],
+      disabled: Boolean(source.disabled),
+      expenses_count: count,
+      expenses_sum_amount: Math.round((cash + instalments) * rate * 100) / 100,
+    })
+  })
+
+  const total = split.credit + split.debit + split.instalments
+  const share = value => total > 0 ? value / total : 0
+  const top = [...items].sort((a, b) => b.expenses_sum_amount - a.expenses_sum_amount)[0] ?? null
+
+  const types = [["credit", "Credit", "💳"], ["debit", "Debit", "🏦"], ["instalments", "Instalments", "📆"]].map(([key, name, alias]) => ({
+    id: key,
+    name,
+    alias,
+    color: SPLIT_COLORS[key],
+    expenses_count: counts[key],
+    expenses_sum_amount: Math.round(split[key] * 100) / 100,
+  }))
+
+  return {
+    items,
+    types,
+    missing,
+    top,
+    total,
+    split: {
+      credit: { amount: split.credit, share: share(split.credit) },
+      debit: { amount: split.debit, share: share(split.debit) },
+      instalments: { amount: split.instalments, share: share(split.instalments) },
+    },
+  }
 }
 
 /**

@@ -2,8 +2,8 @@ import { api_url, env_name } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { CHIP_COLORS, defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, MonthPicker, RatesModal, SettingsModal, TransfersModal } from "@/components"
+import { CHIP_COLORS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, ManageModal, MonthPicker, RatesModal, SettingsModal, TransfersModal } from "@/components"
 import "./MainView.css"
 import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Tooltip, Typography } from "@mui/material"
@@ -37,8 +37,10 @@ export function MainView({ }) {
     editing: null,
     modal: false,
     overview: false,
+    manageModal: false,
     byAmount: localStorage.getItem("byAmount") === "true",
     overviewPie: localStorage.getItem("overviewPie") === "true",
+    sourcesByType: localStorage.getItem("sourcesByType") === "true",
     expense: null,
     incomeModal: false,
     income: null,
@@ -160,6 +162,10 @@ export function MainView({ }) {
   }
 
   function openModal(expense = {}) {
+    // A new expense goes to an enabled source: the only one, or the last one used if it is still enabled.
+    const enabled = activeSources(state.sources, null)
+    const defaultSource = enabled.length === 1 ? enabled[0].id : (enabled.some(source => source.id === state.lastSource) ? state.lastSource : null)
+
     setState(prev => ({
       ...prev,
       modal: true,
@@ -169,7 +175,7 @@ export function MainView({ }) {
         description: null,
         instalments: null,
         next: false,
-        source_id: state.sources.length === 1 ? state.sources[0].id : state.lastSource,
+        source_id: defaultSource,
         ...expense,
       },
     }))
@@ -295,6 +301,11 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      <ManageModal
+        state={state}
+        setState={setState}
+        reload={() => load()}
+      />
       <SettingsModal
         state={state}
         setState={setState}
@@ -345,6 +356,7 @@ export function MainView({ }) {
           <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
           <Button size="small" color="primary" variant="outlined" onClick={() => openTransferModal()}>Transfer</Button>
           <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
+          <Button size="small" color="secondary" variant="outlined" onClick={() => setState(prev => ({ ...prev, manageModal: true }))} disabled={state.editing}>Manage</Button>
           <Button size="small" color="secondary" variant="outlined" onClick={openSettingsModal} disabled={state.editing}>Settings</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
         </CardActions>

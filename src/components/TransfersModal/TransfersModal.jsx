@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { currencySymbol, numberFormat, sourceOptionLabel } from "@/utils/functions"
+import { activeSources, currencySymbol, numberFormat, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CreditCardTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
@@ -101,11 +101,12 @@ export function TransfersModal({ state, setState }) {
    */
   function optionsFor(field) {
     // The origin and the destination cannot be the same source: each list leaves out what the other one has.
+    // A disabled source takes no new movements: it is only offered where an existing transfer already has it.
     if (field !== "from_source_id") {
-      return state.sources.filter(source => source.id !== state.transfer?.from_source_id)
+      return activeSources(state.sources, state.transfer?.to_source_id).filter(source => source.id !== state.transfer?.from_source_id)
     }
 
-    return state.sources.filter(source =>
+    return activeSources(state.sources, state.transfer?.from_source_id).filter(source =>
       source.id !== state.transfer?.to_source_id && (source.kind !== "card" || source.id === state.transfer?.from_source_id)
     )
   }

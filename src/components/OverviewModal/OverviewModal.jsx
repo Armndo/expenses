@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { BUDGET_COLORS, budgetColor, chartAxis, compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices, standardDate, logScale, unlogScale, monthLabel } from "@/utils/functions"
+import { BUDGET_COLORS, budgetColor, chartAxis, compactMoney, evolutionCharts, foregroundColor, numberFormat, overviewBars, overviewSlices, overviewSources, standardDate, logScale, unlogScale, monthLabel } from "@/utils/functions"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Typography } from "@mui/material"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
@@ -361,6 +361,12 @@ const CATEGORIES_SIZE = {
   content: { height: `min(420px, calc(100dvh - ${CHROME}))`, minHeight: 220 },
 }
 
+// The Sources tab has the same two rows of buttons as Categories, plus one for By Source / By Type, so it is a little taller.
+const SOURCES_SIZE = {
+  width: "min(92vw, 640px)",
+  content: { height: `min(480px, calc(100dvh - ${CHROME}))`, minHeight: 260 },
+}
+
 // Evolution has a second row of buttons too (up to the month or all of it), so its chrome is the same.
 const EVOLUTION_CHROME = CHROME
 
@@ -370,8 +376,27 @@ const EVOLUTION_SIZE = {
   content: { height: { xs: `calc(100dvh - ${EVOLUTION_CHROME})`, md: "auto" }, minHeight: { md: 340 }, maxHeight: `calc(100dvh - ${EVOLUTION_CHROME})` },
 }
 
+/**
+ * The Sources tab: the bars or the pie by source or by type of expense (credit, debit and
+ * instalments, each with its share in the pie). A source with no exchange rate is left out of the figures and named below.
+ */
+function SourcesTab({ data, bars, slices, byAmount, pie }) {
+  const empty = <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><Typography>Nothing to show.</Typography></Box>
+
+  return <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", gap: ".5rem" }}>
+    {data.missing.length > 0 && <Typography variant="caption" color="error" sx={{ flex: "none" }}>
+      Left out, with no exchange rate: {data.missing.map(source => `${source.name} (${source.currency})`).join(", ")}.
+    </Typography>}
+    {data.items.length === 0 ? empty : <Box sx={{ flex: 1, minHeight: 0 }}>
+      {pie
+        ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={byAmount} /> : empty
+        : bars.length > 0 ? <CategoryBars bars={bars} byAmount={byAmount} /> : empty}
+    </Box>}
+  </Box>
+}
+
 export function OverviewModal({ state, setState }) {
-  const [tab, setTab] = useState(() => localStorage.getItem("overviewTab") === "evolution" ? "evolution" : "categories")
+  const [tab, setTab] = useState(() => ["evolution", "sources"].includes(localStorage.getItem("overviewTab")) ? localStorage.getItem("overviewTab") : "categories")
   // Whether the evolution shows every month (the projection included) or stops at the month on the screen.
   const [evolutionAll, setEvolutionAll] = useState(() => localStorage.getItem("evolutionAll") === "true")
   // Whether the evolution charts with very different values (Spent, Instalments and Budget) use a log scale.
@@ -379,6 +404,12 @@ export function OverviewModal({ state, setState }) {
 
   const bars = useMemo(() => overviewBars(state.categories, state.byAmount), [state.categories, state.byAmount])
   const slices = useMemo(() => overviewSlices(state.categories, state.byAmount), [state.categories, state.byAmount])
+  const sourcesData = useMemo(() => overviewSources(state.sources, state.rates), [state.sources, state.rates])
+  const sourceBars = useMemo(() => overviewBars(sourcesData.items, state.byAmount), [sourcesData, state.byAmount])
+  const sourceSlices = useMemo(() => overviewSlices(sourcesData.items, state.byAmount), [sourcesData, state.byAmount])
+  const byType = state.sourcesByType === true
+  const typeBars = useMemo(() => overviewBars(sourcesData.types, state.byAmount), [sourcesData, state.byAmount])
+  const typeSlices = useMemo(() => overviewSlices(sourcesData.types, state.byAmount), [sourcesData, state.byAmount])
 
   function closeModal() {
     setState(prev => ({ ...prev, overview: false }))
@@ -407,7 +438,7 @@ export function OverviewModal({ state, setState }) {
   // The month on the screen (`YYYY-MM`): the evolution ends there.
   const shownMonth = (state.date ?? standardDate()).slice(0, 7)
 
-  const size = tab === "evolution" ? EVOLUTION_SIZE : CATEGORIES_SIZE
+  const size = tab === "evolution" ? EVOLUTION_SIZE : tab === "sources" ? SOURCES_SIZE : CATEGORIES_SIZE
   const empty = <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><Typography>Nothing to show.</Typography></Box>
 
   return (
@@ -421,6 +452,7 @@ export function OverviewModal({ state, setState }) {
         <Box sx={{ px: "1rem", pb: "1rem", display: "grid", gap: ".5rem", flex: "none" }}>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton label="Categories" selected={tab === "categories"} onClick={() => selectTab("categories")} />
+            <ToggleButton label="Sources" selected={tab === "sources"} onClick={() => selectTab("sources")} />
             <ToggleButton label="Evolution" selected={tab === "evolution"} onClick={() => selectTab("evolution")} />
           </Box>
           {tab === "evolution" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
@@ -429,7 +461,11 @@ export function OverviewModal({ state, setState }) {
             <ToggleButton color="success" label="Linear" selected={!evolutionLog} onClick={() => selectEvolutionScale(false)} />
             <ToggleButton color="success" label="Log" selected={evolutionLog} onClick={() => selectEvolutionScale(true)} />
           </Box>}
-          {tab === "categories" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+          {tab === "sources" && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+            <ToggleButton color="success" label="By Source" selected={!byType} onClick={() => toggle("sourcesByType", false)} />
+            <ToggleButton color="success" label="By Type" selected={byType} onClick={() => toggle("sourcesByType", true)} />
+          </Box>}
+          {(tab === "categories" || tab === "sources") && <Box sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
             <ToggleButton color="success" label="By Amount" selected={state.byAmount} onClick={() => toggle("byAmount", true)} />
             <ToggleButton color="success" label="By Expenses" selected={!state.byAmount} onClick={() => toggle("byAmount", false)} />
             <ToggleButton color="success" label="Bars" selected={!state.overviewPie} onClick={() => toggle("overviewPie", false)} />
@@ -437,9 +473,11 @@ export function OverviewModal({ state, setState }) {
           </Box>}
         </Box>
         <CardContent sx={{ ...size.content, overflowY: tab === "evolution" ? "auto" : "hidden", pt: 0 }}>
-          {tab === "evolution" ? <Evolution month={evolutionAll ? null : shownMonth} shown={shownMonth} log={evolutionLog} /> : state.overviewPie
-            ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : empty
-            : bars.length > 0 ? <CategoryBars bars={bars} byAmount={state.byAmount} /> : empty}
+          {tab === "evolution" ? <Evolution month={evolutionAll ? null : shownMonth} shown={shownMonth} log={evolutionLog} /> : tab === "sources"
+            ? <SourcesTab data={sourcesData} bars={byType ? typeBars : sourceBars} slices={byType ? typeSlices : sourceSlices} byAmount={state.byAmount} pie={state.overviewPie} />
+            : state.overviewPie
+              ? slices.length > 0 ? <CategoryPie slices={slices} byAmount={state.byAmount} /> : empty
+              : bars.length > 0 ? <CategoryBars bars={bars} byAmount={state.byAmount} /> : empty}
         </CardContent>
         <CardActions sx={{ p: "1rem", flex: "none" }}>
           <Button color="error" type="button" variant="contained" onClick={closeModal}>Close</Button>

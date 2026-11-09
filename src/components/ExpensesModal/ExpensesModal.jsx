@@ -1,5 +1,5 @@
 import { api_url } from "@/env"
-import { sourceOptionLabel } from "@/utils/functions"
+import { activeCategories, activeSources, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
@@ -155,7 +155,7 @@ export function ExpensesModal({ state, setState }) {
                   <CreditCardTwoTone />
                 </InputAdornment>}
               >
-                {state.sources.map(source => <MenuItem key={`source_${source.id}`} value={source.id}>{sourceOptionLabel(source)}</MenuItem>)}
+                {activeSources(state.sources, state.expense?.source_id).map(source => <MenuItem key={`source_${source.id}`} value={source.id}>{sourceOptionLabel(source)}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField
@@ -218,7 +218,7 @@ export function ExpensesModal({ state, setState }) {
                 </InputAdornment>}
               >
                 <MenuItem dense value={0}>Select a category</MenuItem>
-                {state.categories.map(category => <MenuItem key={`category_${category.id}`} dense value={category.id}>{category.alias} {category.name}</MenuItem>)}
+                {activeCategories(state.categories, state.expense?.category_id).map(category => <MenuItem key={`category_${category.id}`} dense value={category.id}>{category.alias} {category.name}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField
