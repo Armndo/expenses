@@ -323,7 +323,7 @@ export function ManageModal({ state, setState, reload }) {
 
   return (
     state.manageModal && <div className="expenses-modal show" onClick={closeModal}>
-      <Card elevation={5} sx={{ borderRadius: "1rem", width: "min(92vw, 560px)", maxHeight: "calc(100dvh - 2rem)", display: "flex", flexDirection: "column", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+      <Card elevation={5} sx={{ borderRadius: "1rem", width: "min(92vw, 560px)", height: "min(540px, calc(100dvh - 2rem))", display: "flex", flexDirection: "column", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
         <CardHeader title={form ? `${form.id ? "Edit" : "New"} ${form.type}` : "Manage"} sx={{ flex: "none" }} />
         {!form && <Box sx={{ px: "1rem", pb: ".5rem", display: "flex", gap: ".5rem", flex: "none" }}>
           <Toggle label="Sources" selected={tab === "sources"} onClick={() => setTab("sources")} />
