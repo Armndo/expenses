@@ -1,3 +1,9 @@
+## 0.9.1 (2026-11-09)
+
+### Fix
+
+- **deps**: update the npm dependencies with security advisories
+
 ## 0.9.0 (2026-11-09)
 
 ### Feat
