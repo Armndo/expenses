@@ -62,7 +62,6 @@ export function SettingsModal({ state, setState }) {
               sx={{ width: "100%", mb: "1rem" }}
               label="Balance start"
               type="month"
-              helperText="First month counted by the Balance; what is dated before it is left out."
               value={state.settings?.balance_start ?? ""}
               onChange={e => setState(prev => ({ ...prev, settings: { ...prev.settings, balance_start: e.target.value !== "" ? e.target.value : null } }))}
               slotProps={{ inputLabel: { shrink: true } }}
@@ -71,7 +70,6 @@ export function SettingsModal({ state, setState }) {
               sx={{ width: "100%", mb: "1rem" }}
               label="Budget start"
               type="month"
-              helperText="First month of the budget; what each month leaves over or owes passes to the next. Empty: the same as the balance start."
               value={state.settings?.budget_start ?? ""}
               onChange={e => setState(prev => ({ ...prev, settings: { ...prev.settings, budget_start: e.target.value !== "" ? e.target.value : null } }))}
               slotProps={{ inputLabel: { shrink: true } }}
@@ -81,7 +79,6 @@ export function SettingsModal({ state, setState }) {
               label="Monthly budget"
               type="number"
               placeholder="No budget"
-              helperText="Pesos a month; the Spent of each month is compared with it. Leave it empty for none."
               value={state.settings?.monthly_budget ?? ""}
               onChange={e => setState(prev => ({ ...prev, settings: { ...prev.settings, monthly_budget: e.target.value !== "" ? e.target.value : null } }))}
               slotProps={{
