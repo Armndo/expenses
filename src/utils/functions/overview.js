@@ -42,6 +42,8 @@ export const CHIP_COLORS = {
   debit: "#c8e6c9",
   debt: "#ffcdd2",
   instalments: "#bdbaff",
+  lastMonthOwed: "#ef9a9a",   // the red of the "Last month owed" chip of a card
+  lastMonthPaid: "#c5e1a5",   // the acid green of the "Last month paid" chip of a card
   balance: "#bbdefb",
   budget: "#a5d6a7",
   budgetOver: "#ef9a9a",

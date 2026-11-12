@@ -2,11 +2,11 @@ import { api_url, env_name } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { CHIP_COLORS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, standardDate } from "@/utils/functions"
+import { CHIP_COLORS, DEFAULT_SORT, SORT_OPTIONS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, sortSources, standardDate } from "@/utils/functions"
 import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, ManageModal, MonthPicker, RatesModal, SettingsModal, TransfersModal } from "@/components"
 import "./MainView.css"
-import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Tooltip, Typography } from "@mui/material"
+import { ChevronLeft, ChevronRight, Logout, Sort } from "@mui/icons-material"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, MenuItem, Select, Tooltip, Typography } from "@mui/material"
 
 function money(value) {
   return numberFormat(value, 2, "$")
@@ -17,6 +17,8 @@ const SUMMARY_CHIPS = [
   { key: "spent", title: "Spent", sx: { background: CHIP_COLORS.spent } },
   { key: "cash", title: "Debit", sx: { background: CHIP_COLORS.debit } },
   { key: "debt", title: "Debt", sx: { background: CHIP_COLORS.debt } },
+  { key: "last_month_owed", title: "Last month owed", sx: { background: CHIP_COLORS.lastMonthOwed } },
+  { key: "last_month_paid", title: "Last month paid", sx: { background: CHIP_COLORS.lastMonthPaid } },
   { key: "pending_instalments", title: "Pending instalments", sx: { background: CHIP_COLORS.instalments } },
   { key: "total_money", title: "Balance", sx: { background: CHIP_COLORS.balance } },
 ]
@@ -49,6 +51,9 @@ export function MainView({ }) {
     simple: localStorage.getItem("simple") === "true",
     date: localStorage.getItem("date"),
     sources: [],
+    // What the API sent, in its order: `sources` is this with the rows of each group sorted by `sort`.
+    rawSources: [],
+    sort: SORT_OPTIONS.some(option => option.value === localStorage.getItem("sort")) ? localStorage.getItem("sort") : DEFAULT_SORT,
     summary: null,
     range: null,
     rates: {},
@@ -85,7 +90,8 @@ export function MainView({ }) {
     .then(res => setState(prev => ({
       ...prev,
       date,
-      sources: res.data.expenses,
+      rawSources: res.data.expenses,
+      sources: sortSources(res.data.expenses, prev.sort, res.data.categories),
       categories: res.data.categories,
       summary: res.data.summary ?? null,
       range: res.data.range ?? null,
@@ -142,6 +148,18 @@ export function MainView({ }) {
 
     localStorage.setItem("date", date.toISOString().split("T")[0])
     load(date.toISOString().split("T")[0])
+  }
+
+  /** Back to the current month, without the arrows or the calendar. */
+  function goToday() {
+    const now = new Date()
+
+    selectMonth(now.getFullYear(), now.getMonth())
+  }
+
+  function changeSort(sort) {
+    localStorage.setItem("sort", sort)
+    setState(prev => ({ ...prev, sort, sources: sortSources(prev.rawSources, sort, prev.categories) }))
   }
 
   function logout() {
@@ -281,6 +299,8 @@ export function MainView({ }) {
   const shownKey = `${shown.year}-${String(shown.month + 1).padStart(2, "0")}`
   const atFirstMonth = bounds !== null && shownKey <= bounds.min
   const atLastMonth = bounds !== null && shownKey >= bounds.max
+  const today = new Date()
+  const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`
 
   return <>
     {state.loading && <div className="expenses-loading"><div><Typography variant="h6">Loading...</Typography></div></div>}
@@ -320,7 +340,19 @@ export function MainView({ }) {
             <Button size="small" color="secondary" variant="contained" aria-label="Previous month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate()} disabled={state.editing || atFirstMonth}><ChevronLeft fontSize="small" /></Button>
             <MonthPicker {...shownMonth()} min={monthBounds()?.min} max={monthBounds()?.max} onSelect={selectMonth} disabled={state.editing} />
             <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate(true)} disabled={state.editing || atLastMonth}><ChevronRight fontSize="small" /></Button>
+            {shownKey !== currentKey && <Button size="small" color="secondary" variant="outlined" aria-label="Go to the current month" sx={{ minWidth: 0, px: 1.25, height: 30 }} onClick={goToday} disabled={state.editing}>Today</Button>}
             {env_name && <Chip size="small" label={env_name} sx={{ background: "#c62828", color: "#fff", fontWeight: 500 }} />}
+            <Select
+              size="small"
+              value={state.sort}
+              onChange={e => changeSort(e.target.value)}
+              disabled={state.editing}
+              inputProps={{ "aria-label": "Sort the rows" }}
+              startAdornment={<Sort fontSize="small" sx={{ mr: .5 }} />}
+              sx={{ height: 30, fontSize: ".8125rem", minWidth: { xs: 0, sm: 190 } }}
+            >
+              {SORT_OPTIONS.map(option => <MenuItem dense key={option.value} value={option.value}>{option.label}</MenuItem>)}
+            </Select>
             <Button size="small" color="error" variant="contained" aria-label="Logout" sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 }, height: 30 }} onClick={logout}>
               <Logout fontSize="small" sx={{ display: { xs: "block", sm: "none" } }} />
               <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Logout</Box>
@@ -329,7 +361,7 @@ export function MainView({ }) {
           subheader={<Box className="summary-chips" sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem", mt: ".5rem" }}>
             {/* The API sends null when there is no value (before the balance start month, or with a missing
                 exchange rate): that chip is left out instead of showing a dash. */}
-            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (chip.key !== "pending_instalments" || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
+            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (!["pending_instalments", "last_month_owed", "last_month_paid"].includes(chip.key) || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
               <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
             </Tooltip>)}
             {state.summary?.budget_carry != null && Math.abs(state.summary.budget_carry) >= 0.005 && (({ label, color }) => <Tooltip title="Budget carried over from the previous months">

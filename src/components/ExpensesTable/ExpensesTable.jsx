@@ -1,5 +1,5 @@
 import { ExpenseItem } from "@/components"
-import { currencySymbol, isCard, kindLabel, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
+import { currencySymbol, isCard, kindLabel, lastMonthCleared, lastMonthOwed, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Fragment } from "react"
 import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
@@ -79,11 +79,11 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
                   <div className="source-title">
                     <Typography sx={{ fontSize: "1.25rem", fontWeight: "bold" }}>{source.name}</Typography>
                     <Chip size="small" sx={{ background: isCard(source) ? CREDIT_BG : DEBIT_BG, fontWeight: 400 }} label={kindLabel(source)} />
-                    {lastMonthPaid(source) === true && <Tooltip title="No debt left from earlier periods">
-                      <Chip size="small" sx={{ background: PAID_BG, fontWeight: 400 }} label="Last month paid" />
+                    {lastMonthPaid(source) === true && <Tooltip title="Last month paid">
+                      <Chip size="small" sx={{ background: PAID_BG, fontWeight: 400 }} label={lastMonthCleared(source) === null ? "Last month paid" : `Last month paid ${currencySymbol(source.currency)}${numberFormat(lastMonthCleared(source), 2)}`} />
                     </Tooltip>}
-                    {lastMonthPaid(source) === false && <Tooltip title="Debt left from earlier periods">
-                      <Chip size="small" sx={{ background: UNPAID_BG, fontWeight: 400 }} label="Last month not paid" />
+                    {lastMonthPaid(source) === false && <Tooltip title="Last month owed">
+                      <Chip size="small" sx={{ background: UNPAID_BG, fontWeight: 400 }} label={`Last month owed ${currencySymbol(source.currency)}${numberFormat(lastMonthOwed(source), 2)}`} />
                     </Tooltip>}
                   </div>
                   <div className="source-chips">

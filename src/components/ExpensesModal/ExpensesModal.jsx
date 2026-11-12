@@ -1,7 +1,7 @@
 import { api_url } from "@/env"
-import { activeCategories, activeSources, sourceOptionLabel } from "@/utils/functions"
+import { activeCategories, activeSources, filterCategories, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
-import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { Autocomplete, Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 
@@ -205,22 +205,34 @@ export function ExpensesModal({ state, setState }) {
                 }
               }}
             />
-            <FormControl fullWidth>
-              <InputLabel id="select-category">Category</InputLabel>
-              <Select
-                labelId="select-category"
-                onChange={e => selectCategory(+e.target.value)}
-                value={state.expense?.category_id ?? 0}
-                sx={{ width: "100%", mb: "1rem" }}
+            <Autocomplete
+              fullWidth
+              autoHighlight
+              sx={{ mb: "1rem" }}
+              options={activeCategories(state.categories, state.expense?.category_id)}
+              value={activeCategories(state.categories, state.expense?.category_id).find(category => category.id === state.expense?.category_id) ?? null}
+              onChange={(_, category) => selectCategory(category ? category.id : 0)}
+              getOptionLabel={category => `${category.alias ?? ""} ${category.name}`.trim()}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={(options, { inputValue }) => filterCategories(options, inputValue)}
+              noOptionsText="No categories"
+              renderInput={params => <TextField
+                {...params}
                 label="Category"
-                startAdornment={<InputAdornment sx={{ mr: 1 }}>
-                  <CategoryTwoTone />
-                </InputAdornment>}
-              >
-                <MenuItem dense value={0}>Select a category</MenuItem>
-                {activeCategories(state.categories, state.expense?.category_id).map(category => <MenuItem key={`category_${category.id}`} dense value={category.id}>{category.alias} {category.name}</MenuItem>)}
-              </Select>
-            </FormControl>
+                placeholder="Search a category"
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                    startAdornment: <>
+                      <InputAdornment sx={{ mr: 1 }}>
+                        <CategoryTwoTone />
+                      </InputAdornment>
+                      {params.InputProps.startAdornment}
+                    </>
+                  },
+                }}
+              />}
+            />
             <TextField
               sx={{ width: "100%", mb: "1rem" }}
               label="Description"
