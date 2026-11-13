@@ -13,12 +13,27 @@ const BALANCE_BG = "#bbdefb"   // the same as the Balance chip of the month summ
 const TRANSFER_BG = "#ffe0b2"   // the same as the transfer rows (td.transfer)
 
 /** The amounts of a source in the header, left out when they are 0 (to the cent), separated by a dot. */
-function SourceChips({ source, rates }) {
-  const cash = source.expenses.reduce((a, b) => a + b.amount, 0)
-  const instalments = source.instalments.reduce((a, b) => a + monthlyShare(b), 0)
+// The chips that add up rows stay at the whole month's value; one is dimmed when the filters leave out part of what it adds up, so it is not read
+// as what is shown.
+const DIMMED = 0.5
+
+/** What the chips that add up rows say for a source: incomes, expenses in full, instalments (their monthly share) and payments received. */
+function sums(source) {
+  return {
+    income: source.incomes.reduce((a, b) => a + b.amount, 0),
+    cash: source.expenses.reduce((a, b) => a + b.amount, 0),
+    instalments: source.instalments.reduce((a, b) => a + monthlyShare(b), 0),
+    // What the card received in payments this month.
+    paid: (source.transfers ?? []).filter(t => t.direction === "in").reduce((a, b) => a + b.signed_amount, 0),
+  }
+}
+
+function SourceChips({ source, shown, rates }) {
+  const { cash, instalments, paid } = sums(source)
+  const now = sums(shown ?? source)
+  // A chip is dimmed when what is shown adds up to something else than the whole month.
+  const differs = (whole, part) => Math.abs(whole - part) >= 0.005
   const card = source.kind === "card"
-  // What the card received in payments this month.
-  const paid = (source.transfers ?? []).filter(t => t.direction === "in").reduce((a, b) => a + b.signed_amount, 0)
 
   const symbol = currencySymbol(source.currency)
   // A source in another currency also shows what it is worth in pesos, with the current exchange rate.
@@ -26,11 +41,11 @@ function SourceChips({ source, rates }) {
   const label = value => numberFormat(value, 2, symbol) + (rate ? ` ≈ ${numberFormat(value * rate, 2, "$")}` : "")
 
   const chips = [
-    { title: "Income", sx: { background: INCOME_BG }, value: source.incomes.reduce((a, b) => a + b.amount, 0) },
-    { title: "In full", sx: { background: "transparent", border: "1px solid #c0c0c0" }, value: cash },
-    { title: "Instalments", sx: { background: "#bdbaff" }, value: instalments },
-    { title: "Total", sx: { background: "#c0c0c0" }, value: cash + instalments, equivalent: true },
-    card && { title: "Paid", sx: { background: TRANSFER_BG }, value: paid },
+    { title: "Income", dim: differs(sums(source).income, now.income), sx: { background: INCOME_BG }, value: sums(source).income },
+    { title: "In full", dim: differs(cash, now.cash), sx: { background: "transparent", border: "1px solid #c0c0c0" }, value: cash },
+    { title: "Instalments", dim: differs(instalments, now.instalments), sx: { background: "#bdbaff" }, value: instalments },
+    { title: "Total", dim: differs(cash + instalments, now.cash + now.instalments), sx: { background: "#c0c0c0" }, value: cash + instalments, equivalent: true },
+    card && { title: "Paid", dim: differs(paid, now.paid), sx: { background: TRANSFER_BG }, value: paid },
     source.balance != null && {
       title: card ? "Owed" : "Balance",
       sx: { background: card ? OWED_BG : BALANCE_BG },
@@ -41,8 +56,8 @@ function SourceChips({ source, rates }) {
 
   return chips.map((chip, index) => <Fragment key={chip.title}>
     {index > 0 && <span className="chip-dot"> · </span>}
-    <Tooltip title={chip.title}>
-      <Chip size="small" sx={{ ...chip.sx, fontWeight: 400 }} label={chip.equivalent ? label(chip.value) : numberFormat(chip.value, 2, symbol)} />
+    <Tooltip title={chip.dim ? `${chip.title} (hidden rows)` : chip.title}>
+      <Chip size="small" sx={{ ...chip.sx, fontWeight: 400, ...(chip.dim ? { opacity: DIMMED } : {}) }} label={chip.equivalent ? label(chip.value) : numberFormat(chip.value, 2, symbol)} />
     </Tooltip>
   </Fragment>)
 }
@@ -68,7 +83,11 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
       <Table size="small" stickyHeader className="expenses_table">
         <TableHead>
           <TableRow>
-            {sources.map(source => (
+            {sources.map(shown => {
+              // The header says what the source is for the whole month (what it owes, what was paid): the filters only hide rows.
+              const source = state.sources.find(candidate => candidate.id === shown.id) ?? shown
+
+              return (
               <TableCell
                 colSpan={state.simple ? 4 : 5}
                 align="center"
@@ -87,11 +106,12 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
                     </Tooltip>}
                   </div>
                   <div className="source-chips">
-                    <SourceChips source={source} rates={state.rates} />
+                    <SourceChips source={source} shown={shown} rates={state.rates} />
                   </div>
                 </div>
               </TableCell>
-            ))}
+              )
+            })}
           </TableRow>
         </TableHead>
         <TableBody>
