@@ -62,6 +62,7 @@ export function MainView({ }) {
     settingsModal: false,
     settings: null,
     lastSource: +localStorage.getItem("lastSource"),
+    lastIncomeSource: +localStorage.getItem("lastIncomeSource"),
     lastTransferFrom: +localStorage.getItem("lastTransferFrom"),
     categories: [],
     lastCategory: +localStorage.getItem("lastCategory"),
@@ -187,6 +188,8 @@ export function MainView({ }) {
     setState(prev => ({
       ...prev,
       modal: true,
+      // What it was before editing (null for a new one): the balance already counts it, so the preview subtracts it.
+      expenseOriginal: expense.id ? { ...expense } : null,
       expense: {
         date: standardDate(),
         amount: null,
@@ -206,12 +209,13 @@ export function MainView({ }) {
     setState(prev => ({
       ...prev,
       incomeModal: true,
+      incomeOriginal: income.id ? { ...income } : null,
       income: {
         date: standardDate(),
         amount: null,
         description: null,
         skip_budget: false,
-        source_id: accounts.length === 1 ? accounts[0].id : (accounts.some(source => source.id === state.lastSource) ? state.lastSource : null),
+        source_id: accounts.length === 1 ? accounts[0].id : (accounts.some(source => source.id === state.lastIncomeSource) ? state.lastIncomeSource : null),
         ...income,
       },
     }))
@@ -221,6 +225,7 @@ export function MainView({ }) {
     setState(prev => ({
       ...prev,
       transferModal: true,
+      transferOriginal: transfer.id ? { ...transfer } : null,
       transfer: {
         date: standardDate(),
         amount: null,

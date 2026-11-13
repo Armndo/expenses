@@ -71,6 +71,12 @@ td.transfer {
 .expenses-modal > div {
   user-select: none;
   padding: 1rem;
+  /* The same width for every form (the one its content asked for made each modal different, and the preview lines changed it
+     while typing): 560px, or nearly all the screen on a phone. The height is the screen's and what does not fit scrolls. */
+  box-sizing: border-box;
+  width: min(92vw, 560px);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
   position: absolute;
   left: 50%;
   top: 50%;
@@ -204,11 +210,6 @@ td {
     font-size: 2.5vw !important;
   }
 
-  .expenses-modal > div {
-    width: calc(100vw - 6rem);
-    /* background: cyan !important; */
-  }
-
 }
 
 @media only screen and (max-height: 600px) and (orientation: landscape) {
@@ -217,9 +218,6 @@ td {
     width: calc(100vw - 6rem) !important;
   }
 
-  .expenses-modal > div {
-    width: calc(100vw - 6rem);
-  }
 }
 
 input {

@@ -1,5 +1,6 @@
 import { api_url } from "@/env"
-import { activeCategories, activeSources, filterCategories, sourceOptionLabel } from "@/utils/functions"
+import { RecordPreview } from "@/components/RecordPreview/RecordPreview"
+import { activeCategories, activeSources, filterCategories, rememberPeriod, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Autocomplete, Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
@@ -64,7 +65,10 @@ export function ExpensesModal({ state, setState }) {
         },
       }
     )
-    .then(() => window.location.reload())
+    .then(res => {
+      rememberPeriod(res?.data?.period)
+      window.location.reload()
+    })
     .catch(err => {
       setState(prev => ({ ...prev, loading: false }))
 
@@ -105,7 +109,10 @@ export function ExpensesModal({ state, setState }) {
         },
       }
     )
-    .then(() => window.location.reload())
+    .then(res => {
+      rememberPeriod(res?.data?.period)
+      window.location.reload()
+    })
     .catch(err => {
       setState(prev => ({ ...prev, loading: false }))
 
@@ -205,6 +212,7 @@ export function ExpensesModal({ state, setState }) {
                 }
               }}
             />
+            <RecordPreview state={state} kind="expense" />
             <Autocomplete
               fullWidth
               autoHighlight

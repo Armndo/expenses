@@ -7,9 +7,9 @@ export function kindLabel(source) {
   return isCard(source) ? "Credit" : "Debit"
 }
 
-/** The text of a source in a dropdown: its name, whether it is credit or debit and, for a card, its cutoff day (0 is the calendar month). */
+/** The text of a source in a dropdown: its name and, for a card, its cutoff day (0 is the calendar month); a debit account is just its name. */
 export function sourceOptionLabel(source) {
-  return `${source.name} (${kindLabel(source)}${isCard(source) && source.cutoff != null ? ` · cutoff ${source.cutoff}` : ""})`
+  return isCard(source) && source.cutoff != null ? `${source.name} (cutoff ${source.cutoff})` : source.name
 }
 
 /**

@@ -1,7 +1,8 @@
 import { api_url } from "@/env"
-import { activeSources, currencySymbol, numberFormat, sourceOptionLabel } from "@/utils/functions"
+import { RecordPreview } from "@/components/RecordPreview/RecordPreview"
+import { activeSources, currencySymbol, lastMonthOwed, numberFormat, rememberPeriod, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CreditCardTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
-import { Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, FormControl, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 
@@ -13,6 +14,8 @@ export function TransfersModal({ state, setState }) {
   const crosses = !!from && !!to && from.currency !== to.currency
   // The currency that is not pesos, and what one unit of it is worth according to the two amounts.
   const foreign = crosses ? (from.currency === "MXN" ? to.currency : from.currency) : null
+  // What a card still owes from earlier periods: a button fills the amount with it (the received one between currencies).
+  const owed = to ? (lastMonthOwed(to) ?? 0) : 0
   const impliedRate = crosses && +state.transfer.amount > 0 && +state.transfer.received_amount > 0
     ? (from.currency === "MXN" ? +state.transfer.amount / +state.transfer.received_amount : +state.transfer.received_amount / +state.transfer.amount)
     : null
@@ -59,7 +62,10 @@ export function TransfersModal({ state, setState }) {
       : axios.post(`${api_url}/transfers`, transfer, config)
 
     request
-    .then(() => window.location.reload())
+    .then(res => {
+      rememberPeriod(res?.data?.period)
+      window.location.reload()
+    })
     .catch(err => {
       setState(prev => ({ ...prev, loading: false }))
 
@@ -197,6 +203,12 @@ export function TransfersModal({ state, setState }) {
                 }
               }}
             />}
+            {owed > 0.005 && <Box sx={{ display: "flex", justifyContent: "flex-end", mt: "-.5rem", mb: "1rem" }}><Button
+              size="small"
+              variant="outlined"
+              onClick={() => editTransfer(crosses ? "received_amount" : "amount", owed.toFixed(2))}
+            >Pay owed {numberFormat(owed, 2, currencySymbol(to.currency))}</Button></Box>}
+            <RecordPreview state={state} kind="transfer" />
             <TextField
               sx={{ width: "100%" }}
               label="Description"

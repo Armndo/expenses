@@ -1,5 +1,6 @@
 import { api_url } from "@/env"
-import { incomeSources, sourceOptionLabel } from "@/utils/functions"
+import { RecordPreview } from "@/components/RecordPreview/RecordPreview"
+import { incomeSources, rememberPeriod, sourceOptionLabel } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CreditCardTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
 import { Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, InputAdornment, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
 import axios from "axios"
@@ -9,7 +10,7 @@ export function IncomesModal({ state, setState }) {
   const navigate = useNavigate()
 
   function selectSource(value) {
-    localStorage.setItem("lastSource", value)
+    localStorage.setItem("lastIncomeSource", value)
 
     setState(prev => ({
       ...prev,
@@ -17,7 +18,7 @@ export function IncomesModal({ state, setState }) {
         ...prev.income,
         source_id: value,
       },
-      lastSource: value,
+      lastIncomeSource: value,
     }))
   }
 
@@ -46,7 +47,10 @@ export function IncomesModal({ state, setState }) {
       : axios.post(`${api_url}/incomes`, income, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
 
     request
-    .then(() => window.location.reload())
+    .then(res => {
+      rememberPeriod(res?.data?.period)
+      window.location.reload()
+    })
     .catch(err => {
       setState(prev => ({ ...prev, loading: false }))
 
@@ -132,6 +136,7 @@ export function IncomesModal({ state, setState }) {
                 }
               }}
             />
+            <RecordPreview state={state} kind="income" />
             <FormControlLabel
               control={<Checkbox
                 onChange={e => editIncome("skip_budget", e.target.checked)}
