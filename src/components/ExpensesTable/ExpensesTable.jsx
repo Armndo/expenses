@@ -1,7 +1,7 @@
 import { ExpenseItem } from "@/components"
-import { currencySymbol, isCard, kindLabel, lastMonthCleared, lastMonthOwed, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
+import { currencySymbol, emptyFilters, hasFilters, isCard, kindLabel, lastMonthCleared, lastMonthOwed, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Fragment } from "react"
-import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
+import { Button, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 const INCOME_BG = "#c8e6c9"
 const OWED_BG = "#ffcdd2"
@@ -116,7 +116,8 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
         <TableBody>
           <TableRow>
             <TableCell>
-              <Typography variant="h6" >No expenses.</Typography>
+              <Typography variant="h6" >{hasFilters(state.filters) ? "Nothing matches the filters." : "No expenses."}</Typography>
+              {hasFilters(state.filters) && <Button size="small" sx={{ mt: ".5rem" }} onClick={() => setState(prev => ({ ...prev, filters: emptyFilters(Object.fromEntries(Object.keys(prev.filters.types).map(key => [key, true]))) }))}>Clear the filters</Button>}
             </TableCell>
           </TableRow>
         </TableBody>

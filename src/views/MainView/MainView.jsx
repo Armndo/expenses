@@ -2,11 +2,11 @@ import { api_url, env_name } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { CHIP_COLORS, DEFAULT_SORT, SORT_OPTIONS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, sortSources, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, ManageModal, MonthPicker, RatesModal, SettingsModal, TransfersModal } from "@/components"
+import { CHIP_COLORS, DEFAULT_SORT, emptyFilters, SORT_OPTIONS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, sortSources, standardDate } from "@/utils/functions"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, ManageModal, MonthPicker, RatesModal, SettingsModal, TransfersModal, ViewBar } from "@/components"
 import "./MainView.css"
-import { ChevronLeft, ChevronRight, Logout, Sort } from "@mui/icons-material"
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, MenuItem, Select, Tooltip, Typography } from "@mui/material"
+import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Tooltip, Typography } from "@mui/material"
 
 function money(value) {
   return numberFormat(value, 2, "$")
@@ -54,6 +54,9 @@ export function MainView({ }) {
     // What the API sent, in its order: `sources` is this with the rows of each group sorted by `sort`.
     rawSources: [],
     sort: SORT_OPTIONS.some(option => option.value === localStorage.getItem("sort")) ? localStorage.getItem("sort") : DEFAULT_SORT,
+    // The search and the filters of the month on screen (`@/utils/functions/filters.js`); they are cleared when the month changes.
+    filters: emptyFilters(),
+    filtersMonth: null,
     summary: null,
     range: null,
     rates: {},
@@ -94,6 +97,8 @@ export function MainView({ }) {
       rawSources: res.data.expenses,
       sources: sortSources(res.data.expenses, prev.sort, res.data.categories),
       categories: res.data.categories,
+      filters: prev.filtersMonth === date ? prev.filters : emptyFilters(prev.filters.types),
+      filtersMonth: date,
       summary: res.data.summary ?? null,
       range: res.data.range ?? null,
       rates: res.data.rates ?? {},
@@ -347,17 +352,6 @@ export function MainView({ }) {
             <Button size="small" color="secondary" variant="contained" aria-label="Next month" sx={{ minWidth: 0, px: 1, height: 30 }} onClick={() => changeDate(true)} disabled={state.editing || atLastMonth}><ChevronRight fontSize="small" /></Button>
             {shownKey !== currentKey && <Button size="small" color="secondary" variant="outlined" aria-label="Go to the current month" sx={{ minWidth: 0, px: 1.25, height: 30 }} onClick={goToday} disabled={state.editing}>Today</Button>}
             {env_name && <Chip size="small" label={env_name} sx={{ background: "#c62828", color: "#fff", fontWeight: 500 }} />}
-            <Select
-              size="small"
-              value={state.sort}
-              onChange={e => changeSort(e.target.value)}
-              disabled={state.editing}
-              inputProps={{ "aria-label": "Sort the rows" }}
-              startAdornment={<Sort fontSize="small" sx={{ mr: .5 }} />}
-              sx={{ height: 30, fontSize: ".8125rem", minWidth: { xs: 0, sm: 190 } }}
-            >
-              {SORT_OPTIONS.map(option => <MenuItem dense key={option.value} value={option.value}>{option.label}</MenuItem>)}
-            </Select>
             <Button size="small" color="error" variant="contained" aria-label="Logout" sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 }, height: 30 }} onClick={logout}>
               <Logout fontSize="small" sx={{ display: { xs: "block", sm: "none" } }} />
               <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Logout</Box>
@@ -397,6 +391,7 @@ export function MainView({ }) {
           <Button size="small" color="secondary" variant="outlined" onClick={openSettingsModal} disabled={state.editing}>Settings</Button>
           <Button size="small" color="info" variant={!state.simple ? "outlined" : "contained"} onClick={changeMode} disabled={state.editing}>{state.simple ? "advanced" : "simple"}</Button>
         </CardActions>
+        <ViewBar state={state} setState={setState} changeSort={changeSort} />
         <CardContent sx={{ width: "calc(100% - 2rem)", p: 0, pl: "1rem", pb: 0, mb: "1rem", ":last-child": {mb: "1rem", pb: 0 } }}>
           <ExpensesTable
             state={state}
