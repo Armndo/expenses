@@ -1,11 +1,16 @@
 /* eslint-disable react/prop-types -- the project has no PropTypes; `state` is the one big object of MainView */
-import { FILTER_TYPES, SORT_OPTIONS, activeFilterCount, emptyFilters, filterBounds, filterCategories, filterCounts, filterSources, hasFilters, numberFormat, saveTypes } from "@/utils/functions"
+import { CHIP_COLORS, FILTER_TYPES, SORT_OPTIONS, activeFilterCount, emptyFilters, filterBounds, filterCategories, filterCounts, filterSources, hasFilters, numberFormat, saveTypes } from "@/utils/functions"
 import { Clear, FilterList, Search, Sort } from "@mui/icons-material"
 import { Autocomplete, Badge, Box, Button, Chip, IconButton, InputAdornment, MenuItem, Popover, Select, TextField, Typography } from "@mui/material"
 import { useMemo, useState } from "react"
-import { DateRangeField } from "./DateRangeField"
 
 const FIELD = { height: 30, fontSize: ".8125rem" }
+
+// The type chips take the colour of that type everywhere else (the `In full` outline for the expenses, the lilac of the instalments, the green of the incomes and the
+// amber of the transfers); off, they are dimmed like the chips of a source that lose rows (`DIMMED` in `ExpensesTable`).
+const DIMMED = 0.5
+// `Expenses` is the `In full` chip of a source: no fill and a grey border.
+const TYPE_COLORS = { expenses: "transparent", instalments: CHIP_COLORS.instalments, incomes: CHIP_COLORS.debit, transfers: "#ffe0b2" }
 
 /**
  * The bar above the table: a live search, the filters of the month in a panel and the order of the rows, with how many records and
@@ -101,8 +106,14 @@ export function ViewBar({ state, setState, changeSort }) {
               key={type.key}
               size="small"
               label={type.label}
-              color={filters.types[type.key] ? "primary" : "default"}
-              variant={filters.types[type.key] ? "filled" : "outlined"}
+              sx={{
+                fontWeight: 400,
+                color: "text.primary",
+                background: TYPE_COLORS[type.key],
+                border: type.key === "expenses" ? "1px solid #c0c0c0" : undefined,
+                opacity: filters.types[type.key] ? 1 : DIMMED,
+                "&:hover": { background: TYPE_COLORS[type.key] },
+              }}
               onClick={() => change({ types: { ...filters.types, [type.key]: !filters.types[type.key] } })}
             />)}
           </Box>
@@ -138,14 +149,6 @@ export function ViewBar({ state, setState, changeSort }) {
             />)}
           </Box>
         </Box>
-
-        <DateRangeField
-          from={filters.from}
-          to={filters.to}
-          min={bounds.first ?? undefined}
-          max={bounds.last ?? undefined}
-          onChange={(from, to) => change({ from, to })}
-        />
 
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="body2" color="text.secondary">{counts.records} of {counts.totalRecords} records</Typography>

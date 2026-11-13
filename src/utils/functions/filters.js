@@ -34,10 +34,10 @@ export function saveTypes(types) {
 
 /**
  * The filters of the month on screen. `types` is remembered between sessions; the rest is cleared when the month changes.
- * `categories` are ids; `min` and `max` are pesos (`null` is the end of the range) and `from` and `to` are `YYYY-MM-DD` ("" is none).
+ * `categories` are ids; `min` and `max` are pesos (`null` is the end of the range).
  */
 export function emptyFilters(types = loadTypes()) {
-  return { text: "", types, categories: [], min: null, max: null, from: "", to: "" }
+  return { text: "", types, categories: [], min: null, max: null }
 }
 
 /** How many of the filters of the panel are on (the text has its own field). */
@@ -45,7 +45,6 @@ export function activeFilterCount(filters) {
   return (Object.values(filters.types).some(on => !on) ? 1 : 0)
     + (filters.categories.length > 0 ? 1 : 0)
     + (filters.min !== null || filters.max !== null ? 1 : 0)
-    + (filters.from !== "" || filters.to !== "" ? 1 : 0)
 }
 
 export function hasFilters(filters) {
@@ -87,12 +86,6 @@ function every(source, group, items, filters, context, needles) {
       }
     }
 
-    const date = `${item.date ?? ""}`.slice(0, 10)
-
-    if ((filters.from !== "" && date < filters.from) || (filters.to !== "" && date > filters.to)) {
-      return false
-    }
-
     if (needles.length > 0) {
       const amount = group === "transfers" ? item.signed_amount : item.amount
       const haystack = normalizeText([item.description, category?.name, category?.alias, source.name, item.counterpart_name, amount, Number(amount).toFixed(2)].join(" "))
@@ -126,23 +119,14 @@ export function filterSources(sources, filters, { categories = [], rates = {} } 
   }))
 }
 
-/** The smallest and the largest amount in pesos of the month's expenses and instalments (for the slider), and the range of dates. */
+/** The smallest and the largest amount in pesos of the month's expenses and instalments (the hints of the amount fields). */
 export function filterBounds(sources, rates = {}) {
   let min = null
   let max = null
-  let first = null
-  let last = null
 
   for (const source of sources) {
     for (const group of ["expenses", "instalments", "incomes", "transfers"]) {
       for (const item of source[group] ?? []) {
-        const date = `${item.date ?? ""}`.slice(0, 10)
-
-        if (date !== "") {
-          first = first === null || date < first ? date : first
-          last = last === null || date > last ? date : last
-        }
-
         if (AMOUNT_GROUPS.includes(group)) {
           const value = pesos(item, group, source, rates)
 
@@ -155,7 +139,7 @@ export function filterBounds(sources, rates = {}) {
     }
   }
 
-  return { min: min === null ? null : Math.floor(min), max: max === null ? null : Math.ceil(max), first, last }
+  return { min: min === null ? null : Math.floor(min), max: max === null ? null : Math.ceil(max) }
 }
 
 function sourcesWithRows(sources) {
