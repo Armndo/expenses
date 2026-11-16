@@ -229,3 +229,12 @@ input::-webkit-calendar-picker-indicator {
   display: none;
   -webkit-appearance: none;
 }
+/* The record the search went to: a marker colour that fades out (the row keeps its own colour afterwards). */
+td.highlight {
+  animation: highlight-fade 4s ease-out;
+}
+
+@keyframes highlight-fade {
+  0%, 40% { background-color: #fff176; }
+  100% { background-color: transparent; }
+}

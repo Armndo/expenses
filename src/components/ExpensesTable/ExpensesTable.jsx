@@ -1,6 +1,6 @@
 import { ExpenseItem } from "@/components"
 import { currencySymbol, emptyFilters, hasFilters, isCard, kindLabel, lastMonthCleared, lastMonthOwed, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
-import { Fragment } from "react"
+import { Fragment, useEffect } from "react"
 import { Button, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
 const INCOME_BG = "#c8e6c9"
@@ -70,6 +70,13 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
   }
 
   const sources = visibleSources(state)
+
+  // After the search goes to a record, bring it into view.
+  useEffect(() => {
+    if (state.highlight) {
+      document.querySelector("td.highlight")?.scrollIntoView({ block: "center", behavior: "smooth" })
+    }
+  }, [state.highlight, state.sources])
   const rows = {
     incomes: Math.max(0, ...sources.map(source => source.incomes.length)),
     transfers: Math.max(0, ...sources.map(source => source.transfers?.length ?? 0)),

@@ -118,6 +118,9 @@ export function ExpenseItem({ index, rows, state, setState, openModal, openIncom
   }
 
   const className = { incomes: "income", transfers: "transfer", expenses: null, instalments: "instalment" }[group]
+  // The record the search went to: its cells are marked for a moment (`td.highlight`).
+  const type = { incomes: "income", transfers: "transfer", expenses: "expense", instalments: "expense" }[group]
+  const marked = item => !!item && state.highlight?.type === type && state.highlight?.id === item.id
   const open = { incomes: openIncomeModal, transfers: openTransferModal, expenses: openModal, instalments: openModal }[group]
 
   return (
@@ -128,7 +131,7 @@ export function ExpenseItem({ index, rows, state, setState, openModal, openIncom
         if (state.simple) return <SimpleItem
           key={`r${index}c${idx}`}
           categories={categories}
-          className={`simple ${className ?? ""}`}
+          className={`simple ${className ?? ""}${marked(item) ? " highlight" : ""}`}
           target={group}
           item={item}
           source={source}
@@ -140,7 +143,7 @@ export function ExpenseItem({ index, rows, state, setState, openModal, openIncom
           setState={setState}
           source={source}
           target={group}
-          className={className}
+          className={marked(item) ? `${className ?? ""} highlight` : className}
           item={item}
           openModal={open}
         />

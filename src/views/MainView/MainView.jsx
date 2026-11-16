@@ -3,10 +3,32 @@ import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { CHIP_COLORS, DEFAULT_SORT, emptyFilters, SORT_OPTIONS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, sortSources, standardDate } from "@/utils/functions"
-import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, ManageModal, MonthPicker, RatesModal, SettingsModal, TransfersModal, ViewBar } from "@/components"
+import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, ManageModal, MonthPicker, RatesModal, SearchModal, SettingsModal, TransfersModal, ViewBar } from "@/components"
+import { TYPE_COLORS } from "@/components/ViewBar/TypeChips"
 import "./MainView.css"
 import { ChevronLeft, ChevronRight, Logout } from "@mui/icons-material"
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Tooltip, Typography } from "@mui/material"
+
+/**
+ * The buttons that add a record are the same outline for the three, with a dot of the colour of its type (the `In full` outline, the green of the
+ * incomes, the amber of the transfers); under the pointer the button fills with that colour (the grey of `Spent` for the expenses, which have no fill).
+ */
+const HOVER_COLORS = { expenses: CHIP_COLORS.spent, incomes: TYPE_COLORS.incomes, transfers: TYPE_COLORS.transfers }
+
+function typeButton(type) {
+  return {
+    color: "text.primary",
+    borderColor: "#c0c0c0",
+    "&:hover": { borderColor: type === "expenses" ? "#9e9e9e" : HOVER_COLORS[type], background: HOVER_COLORS[type], "& .type-dot": { borderColor: "#fff" } },
+  }
+}
+
+// The dot is filled in the colour of its type (the grey of `Spent` for the expenses, whose chip has no fill).
+const DOT_COLORS = { expenses: CHIP_COLORS.spent, incomes: TYPE_COLORS.incomes, transfers: TYPE_COLORS.transfers }
+
+function TypeDot({ type }) {
+  return <Box component="span" className="type-dot" sx={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: DOT_COLORS[type], border: `1px solid ${DOT_COLORS[type]}` }} />
+}
 
 function money(value) {
   return numberFormat(value, 2, "$")
@@ -57,6 +79,9 @@ export function MainView({ }) {
     // The search and the filters of the month on screen (`@/utils/functions/filters.js`); they are cleared when the month changes.
     filters: emptyFilters(),
     filtersMonth: null,
+    // The search over all the months, and the record the page went to from it (`{ type, id }`, highlighted for a moment).
+    searchModal: false,
+    highlight: null,
     summary: null,
     range: null,
     rates: {},
@@ -161,6 +186,17 @@ export function MainView({ }) {
     const now = new Date()
 
     selectMonth(now.getFullYear(), now.getMonth())
+  }
+
+  /** Goes to the month of a result of the search (an instalment, the one on screen when it falls in its range) and highlights the record. */
+  function goToRecord(row) {
+    const on = shownMonth()
+    const shown = `${on.year}-${String(on.month + 1).padStart(2, "0")}`
+    const inRange = row.period_last && shown >= row.period && shown <= row.period_last
+    const [year, month] = (inRange ? shown : row.period).split("-").map(Number)
+
+    setState(prev => ({ ...prev, searchModal: false, highlight: { type: row.type, id: row.id } }))
+    selectMonth(year, month - 1)
   }
 
   function changeSort(sort) {
@@ -291,6 +327,17 @@ export function MainView({ }) {
     }))
   }
 
+  // The highlight of the record the search went to lasts a few seconds.
+  useEffect(() => {
+    if (!state.highlight) {
+      return
+    }
+
+    const timer = setTimeout(() => setState(prev => ({ ...prev, highlight: null })), 6000)
+
+    return () => clearTimeout(timer)
+  }, [state.highlight])
+
   useEffect(() => {
     if (localStorage.getItem("token") === null) {
       navigate("/login")
@@ -344,6 +391,11 @@ export function MainView({ }) {
         state={state}
         setState={setState}
       />
+      <SearchModal
+        state={state}
+        setState={setState}
+        goToRecord={goToRecord}
+      />
       <Card className="expenses-card" sx={{ margin: "1rem", maxHeight: "calc(100vh - 2rem)", width: "calc(100vw - 2rem)", borderRadius: "1rem", zIndex: 1 }} elevation={5} >
         <CardHeader
           title={<Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "wrap", gap: { xs: ".25rem", sm: ".5rem" } }}>
@@ -383,9 +435,9 @@ export function MainView({ }) {
           subheaderTypographyProps={{ component: "div" }}
         />
         <CardActions disableSpacing className="main-actions" sx={{ p: "1rem", pt: 0, flexWrap: "wrap", gap: ".5rem" }}>
-          <Button size="small" color="success" variant="contained" onClick={() => openModal()}>Expense</Button>
-          <Button size="small" color="success" variant="outlined" onClick={() => openIncomeModal()}>Income</Button>
-          <Button size="small" color="primary" variant="outlined" onClick={() => openTransferModal()}>Transfer</Button>
+          <Button size="small" variant="outlined" sx={typeButton("expenses")} startIcon={<TypeDot type="expenses" />} onClick={() => openModal()}>Expense</Button>
+          <Button size="small" variant="outlined" sx={typeButton("incomes")} startIcon={<TypeDot type="incomes" />} onClick={() => openIncomeModal()}>Income</Button>
+          <Button size="small" variant="outlined" sx={typeButton("transfers")} startIcon={<TypeDot type="transfers" />} onClick={() => openTransferModal()}>Transfer</Button>
           <Button size="small" color="primary" variant="contained" onClick={openOverview}>Overview</Button>
           <Button size="small" color="secondary" variant="outlined" onClick={() => setState(prev => ({ ...prev, manageModal: true }))} disabled={state.editing}>Manage</Button>
           <Button size="small" color="secondary" variant="outlined" onClick={openSettingsModal} disabled={state.editing}>Settings</Button>
