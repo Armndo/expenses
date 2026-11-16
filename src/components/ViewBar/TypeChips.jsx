@@ -7,7 +7,7 @@ import { Box, Chip } from "@mui/material"
 const DIMMED = 0.5
 
 // `Expenses` is the `In full` chip of a source: no fill and a grey border.
-export const TYPE_COLORS = { expenses: "transparent", instalments: CHIP_COLORS.instalments, incomes: CHIP_COLORS.debit, transfers: "#ffe0b2" }
+export const TYPE_COLORS = { expenses: "transparent", recurring: CHIP_COLORS.recurring, instalments: CHIP_COLORS.instalments, incomes: CHIP_COLORS.debit, transfers: "#ffe0b2" }
 
 /** The four types as chips, in their colour and dimmed when off; `types` is `{ expenses: true, ... }` and `onChange` gets the new one. */
 export function TypeChips({ types, onChange }) {

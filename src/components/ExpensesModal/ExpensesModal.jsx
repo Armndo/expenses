@@ -1,8 +1,8 @@
 import { api_url } from "@/env"
 import { RecordPreview } from "@/components/RecordPreview/RecordPreview"
-import { activeCategories, activeSources, filterCategories, rememberPeriod, sourceOptionLabel } from "@/utils/functions"
-import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
-import { Autocomplete, Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, InputAdornment, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { EVERY_OPTIONS, activeCategories, activeSources, billingOf, expenseError, expensePayload, filterCategories, rememberPeriod, sourceOptionLabel } from "@/utils/functions"
+import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, RepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
+import { Autocomplete, Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, Box, InputAdornment, InputLabel, MenuItem, Select, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 
@@ -36,19 +36,15 @@ export function ExpensesModal({ state, setState }) {
   }
 
   function store() {
-    const expense = { ...state.expense }
+    const error = expenseError(state.expense)
 
-    if (expense.amount === null || isNaN(expense.amount) || +expense.amount === 0) {
-      alert("Incorrect 'Amount' format.")
+    if (error) {
+      alert(error)
       return
     }
 
-    if (expense.instalments !== null && (!Number.isInteger(+expense.instalments) || +expense.instalments < 2)) {
-      alert("Incorrect 'Instalments' format.")
-      return
-    }
-
-    expense.amount = +expense.amount
+    // Without the fields of the form itself, and with only what its way of billing uses (the others are cleared).
+    const expense = expensePayload(state.expense)
     if (expense.category_id === 0) delete expense.category_id
 
     setState(prev => ({
@@ -80,19 +76,15 @@ export function ExpensesModal({ state, setState }) {
   }
 
   function update() {
-    const expense = { ...state.expense }
+    const error = expenseError(state.expense)
 
-    if (expense.amount === null || isNaN(expense.amount) || +expense.amount === 0) {
-      alert("Incorrect 'Amount' format.")
+    if (error) {
+      alert(error)
       return
     }
 
-    if (expense.instalments !== null && (!Number.isInteger(+expense.instalments) || +expense.instalments < 2)) {
-      alert("Incorrect 'Instalments' format.")
-      return
-    }
-
-    expense.amount = +expense.amount
+    // Without the fields of the form itself, and with only what its way of billing uses (the others are cleared).
+    const expense = expensePayload(state.expense)
     if (expense.category_id === 0) delete expense.category_id
 
     setState(prev => ({
@@ -123,6 +115,33 @@ export function ExpensesModal({ state, setState }) {
     })
   }
 
+  /** How the expense bills: one payment, instalments or a repetition. Choosing one clears what the others use (the API takes only one of them). */
+  function setBilling(mode) {
+    setState(prev => ({
+      ...prev,
+      expense: {
+        ...prev.expense,
+        billing: mode,
+        instalments: mode === "instalments" ? prev.expense.instalments : null,
+        recurs_every: mode === "repeats" ? (prev.expense.recurs_every ?? 1) : null,
+        ends_on: mode === "repeats" ? prev.expense.ends_on : null,
+        custom_every: mode === "repeats" ? !!prev.expense.custom_every : false,
+      },
+    }))
+  }
+
+  /** The options of "Every" (month, 3 months, 6 months, year) or "Other", which shows a number of months of its own. */
+  function selectEvery(value) {
+    setState(prev => ({
+      ...prev,
+      expense: {
+        ...prev.expense,
+        recurs_every: value === "custom" ? (EVERY_OPTIONS.some(option => option.value === +prev.expense.recurs_every) ? 2 : prev.expense.recurs_every) : value,
+        custom_every: value === "custom",
+      },
+    }))
+  }
+
   function closeModal() {
     setState(prev => ({
       ...prev,
@@ -142,6 +161,8 @@ export function ExpensesModal({ state, setState }) {
       [target]: expense,
     }))
   }
+
+  const billing = billingOf(state.expense ?? {})
 
   return (
     state.modal && <div className={`expenses-modal show`} onClick={closeModal}>
@@ -169,7 +190,7 @@ export function ExpensesModal({ state, setState }) {
               sx={{ width: "100%" }}
               required
               type="date"
-              label="Date"
+              label={billing === "repeats" ? "First charge" : "Date"}
               id="modal-date"
               value={state.expense?.date ?? ""}
               onChange={e => editExpense("expense", "date", e.target.value)}
@@ -196,7 +217,7 @@ export function ExpensesModal({ state, setState }) {
             <TextField
               required
               sx={{ width: "100%", mb: "1rem" }}
-              label="Amount"
+              label={billing === "repeats" ? "Amount per charge" : "Amount"}
               type="number"
               placeholder={"0.01"}
               value={state.expense?.amount ?? ""}
@@ -212,6 +233,70 @@ export function ExpensesModal({ state, setState }) {
                 }
               }}
             />
+            <Box sx={{ mb: "1rem" }}>
+              <Typography variant="caption" color="text.secondary">How it bills</Typography>
+              <ToggleButtonGroup exclusive fullWidth size="small" value={billing} onChange={(_, mode) => mode && setBilling(mode)} sx={{ mt: ".25rem" }}>
+                <ToggleButton value="one">One payment</ToggleButton>
+                <ToggleButton value="instalments">Instalments</ToggleButton>
+                <ToggleButton value="repeats">Repeats</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+            {billing === "instalments" && <TextField
+              sx={{ width: "100%", mb: "1rem" }}
+              label="Instalments"
+              placeholder={"2"}
+              type="number"
+              value={state.expense?.instalments ?? ""}
+              onChange={e => editExpense("expense", "instalments", e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: <InputAdornment sx={{ mr: 1 }}>
+                    <EventRepeatTwoTone />
+                  </InputAdornment>
+                },
+                htmlInput: {
+                  step: 1,
+                  min: 2,
+                  max: 36,
+                }
+              }}
+            />}
+            {billing === "repeats" && state.expense?.id && <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: ".5rem" }}>
+              Changes apply to every charge of this expense, the past ones too. To change the price from a month on, set an end here and add a new one.
+            </Typography>}
+            {billing === "repeats" && <Box sx={{ display: "flex", gap: ".5rem", mb: "1rem" }}>
+              <FormControl sx={{ flex: 1 }}>
+                <InputLabel id="select-every">Every</InputLabel>
+                <Select
+                  labelId="select-every"
+                  label="Every"
+                  value={state.expense?.custom_every ? "custom" : (state.expense?.recurs_every ?? 1)}
+                  onChange={e => selectEvery(e.target.value)}
+                  startAdornment={<InputAdornment sx={{ mr: 1 }}>
+                    <RepeatTwoTone />
+                  </InputAdornment>}
+                >
+                  {EVERY_OPTIONS.map(option => <MenuItem key={`every_${option.value}`} value={option.value}>{option.label}</MenuItem>)}
+                  <MenuItem value="custom">Other</MenuItem>
+                </Select>
+              </FormControl>
+              {state.expense?.custom_every && <TextField
+                sx={{ flex: 1 }}
+                label="Months"
+                type="number"
+                value={state.expense?.recurs_every ?? ""}
+                onChange={e => editExpense("expense", "recurs_every", e.target.value)}
+                slotProps={{ htmlInput: { step: 1, min: 1, max: 60 } }}
+              />}
+              <TextField
+                sx={{ flex: 1 }}
+                type="date"
+                label="Until"
+                value={state.expense?.ends_on ?? ""}
+                onChange={e => editExpense("expense", "ends_on", e.target.value)}
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: state.expense?.date ?? undefined } }}
+              />
+            </Box>}
             <RecordPreview state={state} kind="expense" />
             <Autocomplete
               fullWidth
@@ -257,26 +342,6 @@ export function ExpensesModal({ state, setState }) {
                   sx: {
                     alignItems: "flex-start"
                   }
-                }
-              }}
-            />
-            <TextField
-              sx={{ width: "100%" }}
-              label="Instalments"
-              placeholder={"2"}
-              type="number"
-              value={state.expense?.instalments ?? ""}
-              onChange={e => editExpense("expense", "instalments", e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: <InputAdornment sx={{ mr: 1 }}>
-                    <EventRepeatTwoTone />
-                  </InputAdornment>
-                },
-                htmlInput: {
-                  step: 1,
-                  min: 2,
-                  max: 36,
                 }
               }}
             />

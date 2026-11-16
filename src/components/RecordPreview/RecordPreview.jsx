@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types -- the project has no PropTypes; `state` is the one big object of MainView */
 import { api_url } from "@/env"
-import { currencySymbol, expenseDelta, numberFormat, periodText, previewBudget, previewSource, recordEffect } from "@/utils/functions"
+import { billingOf, chargesIn, currencySymbol, everyText, expenseDelta, numberFormat, periodText, previewBudget, previewSource, recordEffect } from "@/utils/functions"
 import { Box, Typography } from "@mui/material"
 import axios from "axios"
 import { useEffect, useState } from "react"
@@ -18,8 +18,12 @@ const answers = new Map()
  */
 function usePeriod(record) {
   const valid = record && record.source_id && /^\d{4}-\d{2}-\d{2}/.test(record.date ?? "")
-  const instalments = record?.instalments && +record.instalments >= 2 ? +record.instalments : null
-  const key = valid ? `${record.source_id}|${record.date.slice(0, 10)}|${record.next ? 1 : 0}|${instalments ?? ""}` : null
+  // Only what its way of billing uses: instalments, or the repetition (every N months, until a date).
+  const billing = record ? billingOf(record) : "one"
+  const instalments = billing === "instalments" && record?.instalments && +record.instalments >= 2 ? +record.instalments : null
+  const every = billing === "repeats" && record?.recurs_every && +record.recurs_every >= 1 ? +record.recurs_every : null
+  const endsOn = every && record?.ends_on && record.ends_on >= (record.date ?? "") ? record.ends_on : null
+  const key = valid ? `${record.source_id}|${record.date.slice(0, 10)}|${record.next ? 1 : 0}|${instalments ?? ""}|${every ?? ""}|${endsOn ?? ""}` : null
   const [info, setInfo] = useState(null)
 
   useEffect(() => {
@@ -37,7 +41,7 @@ function usePeriod(record) {
     const timer = setTimeout(() => {
       axios.get(`${api_url}/period`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        params: { source_id: record.source_id, date: record.date.slice(0, 10), next: !!record.next, ...(instalments ? { instalments } : {}) },
+        params: { source_id: record.source_id, date: record.date.slice(0, 10), next: !!record.next, ...(instalments ? { instalments } : {}), ...(every ? { recurs_every: every } : {}), ...(endsOn ? { ends_on: endsOn } : {}) },
       })
       .then(res => {
         const answer = { period: res.data.period, last: res.data.last ?? null }
@@ -60,6 +64,11 @@ function usePeriod(record) {
   }, [key]) // eslint-disable-line react-hooks/exhaustive-deps -- `key` is everything that is asked
 
   return info
+}
+
+/** Every how many months a record of the form repeats, or `null` when it does not (an old record from the API has `recurs_every` too). */
+function everyOf(record) {
+  return record && billingOf(record) === "repeats" && record.recurs_every && +record.recurs_every >= 1 ? +record.recurs_every : null
 }
 
 function money(value, currency) {
@@ -163,12 +172,12 @@ export function RecordPreview({ state, kind }) {
     ready = hasAmount && !!source && !!info && (!original || !!oldInfo)
 
     if (ready) {
-      entries.push({ sourceId: source.id, kind: "periodic", amount: delta, period: info.period, last: info.last })
+      entries.push({ sourceId: source.id, kind: "periodic", amount: delta, period: info.period, last: info.last, every: everyOf(record) })
 
       if (original) {
         const oldDelta = kind === "expense" ? expenseDelta(original) : +original.amount
 
-        entries.push({ sourceId: original.source_id, kind: "periodic", amount: -oldDelta, period: oldInfo.period, last: oldInfo.last })
+        entries.push({ sourceId: original.source_id, kind: "periodic", amount: -oldDelta, period: oldInfo.period, last: oldInfo.last, every: everyOf(original) })
       }
 
       if (info.period > shown) {
@@ -177,9 +186,10 @@ export function RecordPreview({ state, kind }) {
 
       // The budget of the month on screen: only what falls in it, and only when the source did not change.
       if (!original || original.source_id === record.source_id) {
-        const budgetOf = (value, skip, at) => (at === shown && !skip ? value : 0)
-        const next = budgetOf(delta, kind === "income" && record.skip_budget, info.period)
-        const previous = original ? budgetOf(kind === "expense" ? expenseDelta(original) : +original.amount, kind === "income" && original.skip_budget, oldInfo.period) : 0
+        // It weighs on the budget of the month on screen when it has a charge there (a recurring expense every N months, the rest in its period).
+        const budgetOf = (value, skip, data, every) => (chargesIn(data.period, data.last, shown, every) && !skip ? value : 0)
+        const next = budgetOf(delta, kind === "income" && record.skip_budget, info, everyOf(record))
+        const previous = original ? budgetOf(kind === "expense" ? expenseDelta(original) : +original.amount, kind === "income" && original.skip_budget, oldInfo, everyOf(original)) : 0
 
         budget = previewBudget(state.summary, state.rates, source.currency, next - previous, shown, shown)
       }
@@ -191,7 +201,11 @@ export function RecordPreview({ state, kind }) {
     : []
   // A source that changed by nothing is not shown (an edit that keeps the amount, or a record that falls after the month on screen).
   const shownPreviews = hasAmount ? previews.filter(preview => Math.abs(preview.change) >= 0.005 || (preview.lastOwed && Math.abs(preview.lastOwed.before - preview.lastOwed.after) >= 0.005)) : []
-  const billsIn = !isTransfer && info ? periodText(info.period, info.last, MONTHS) : null
+  const every = isTransfer ? null : everyOf(record)
+  // A recurring expense says how often it repeats and until when: `November 2026, every month until April 2027`.
+  const billsIn = !isTransfer && info
+    ? (every ? `${periodText(info.period, null, MONTHS)}, every ${everyText(every)}${info.last ? ` until ${periodText(info.last, null, MONTHS)}` : ""}` : periodText(info.period, info.last, MONTHS))
+    : null
 
   if (!billsIn && shownPreviews.length === 0 && !budget && !applies) {
     return null

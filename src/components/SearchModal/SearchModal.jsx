@@ -2,7 +2,7 @@
 import { api_url } from "@/env"
 import { DateRangeField } from "@/components/ViewBar/DateRangeField"
 import { TYPE_COLORS, TypeChips } from "@/components/ViewBar/TypeChips"
-import { FILTER_TYPES, currencySymbol, filterCategories, formatDate, numberFormat, periodText } from "@/utils/functions"
+import { FILTER_TYPES, currencySymbol, everyText, filterCategories, formatDate, numberFormat, periodText } from "@/utils/functions"
 import { Autocomplete, Box, Button, Card, CardActions, CardContent, CardHeader, InputAdornment, TextField, Typography } from "@mui/material"
 import axios from "axios"
 import { Fragment, useEffect, useMemo, useState } from "react"
@@ -17,7 +17,7 @@ function parseAmount(text) {
 
 /** The colour of the left edge of a row: the one of its type (the expenses are the grey of the `In full` chip). */
 function edge(row) {
-  const key = row.type === "income" ? "incomes" : row.type === "transfer" ? "transfers" : row.instalments ? "instalments" : "expenses"
+  const key = row.type === "income" ? "incomes" : row.type === "transfer" ? "transfers" : row.instalments ? "instalments" : row.recurs_every ? "recurring" : "expenses"
 
   return TYPE_COLORS[key] === "transparent" ? "#c0c0c0" : TYPE_COLORS[key]
 }
@@ -50,6 +50,9 @@ function ResultRow({ row, onGo }) {
     <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{details.join(" · ")}</Typography>
     {row.instalments && <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
       {row.instalments} MSI of {numberFormat(row.monthly_share, 2, symbol)} · {periodText(row.period, row.period_last, MONTHS)}
+    </Typography>}
+    {row.recurs_every && <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+      Every {everyText(row.recurs_every)} · {row.period_last ? periodText(row.period, row.period_last, MONTHS) : `from ${periodText(row.period, null, MONTHS)}`}
     </Typography>}
   </Box>
 }

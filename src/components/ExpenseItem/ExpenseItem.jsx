@@ -17,7 +17,7 @@ function monthlyAmount(instalment) {
   return monthlyShare(instalment).toFixed(2)
 }
 
-const RESOURCES = { incomes: "incomes", transfers: "transfers", expenses: "expenses", instalments: "expenses" }
+const RESOURCES = { incomes: "incomes", transfers: "transfers", expenses: "expenses", recurring: "expenses", instalments: "expenses" }
 
 /** A transfer shows an arrow (out or in) and its description; the other account is not shown. */
 function describe(item, target) {
@@ -34,8 +34,11 @@ function describe(item, target) {
 function ShownItem({ categories, setState, item, source, target = "expenses", className = null, openModal = () => null }) {
   const navigate = useNavigate()
 
+  // A recurring expense is one rule: deleting it deletes every charge of it, the past ones too, and the API asks for it with `scope=all`.
+  const recurring = target === "recurring"
+
   function destroy() {
-    if (!confirm("Delete?")) {
+    if (!confirm(recurring ? "Delete this recurring expense and all its charges, the past ones too?" : "Delete?")) {
       return
     }
 
@@ -45,7 +48,7 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
     }))
 
     axios.delete(
-      `${api_url}/${RESOURCES[target]}/${item.id}`,
+      `${api_url}/${RESOURCES[target]}/${item.id}${recurring ? "?scope=all" : ""}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -67,7 +70,7 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
 
   return (
     <>
-      <TableCell className={className}>{formatDate(item?.date)}</TableCell>
+      <TableCell className={className}>{formatDate(item?.occurrence_date ?? item?.date)}</TableCell>
       <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, currencySymbol(source.currency))}</TableCell>
       {/* Incomes and transfers have no category: the description takes its column too. */}
       {target === "incomes" || target === "transfers" ?
@@ -90,7 +93,7 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
 function SimpleItem({ categories, className, item, source, target = "expenses" }) {
   return (
     <>
-      <TableCell className={className}>{formatDate(item?.date)}</TableCell>
+      <TableCell className={className}>{formatDate(item?.occurrence_date ?? item?.date)}</TableCell>
       <TableCell className={className} sx={{ whiteSpace: "nowrap" }}>{numberFormat(monthlyAmount(item) ?? "-", 2, currencySymbol(source.currency))}</TableCell>
       {target === "incomes" || target === "transfers" ?
         <TableCell className={className} colSpan={2}>{item ? describe(item, target) : "-"}</TableCell> :
@@ -105,7 +108,7 @@ function SimpleItem({ categories, className, item, source, target = "expenses" }
 
 /** Rows go cash expenses, instalments, transfers and incomes; `rows` has the height of each group. */
 export function ExpenseItem({ index, rows, state, setState, openModal, openIncomeModal, openTransferModal, categories }) {
-  const groups = ["expenses", "instalments", "transfers", "incomes"]
+  const groups = ["expenses", "recurring", "instalments", "transfers", "incomes"]
   let position = index
   let group = groups[0]
 
@@ -117,11 +120,11 @@ export function ExpenseItem({ index, rows, state, setState, openModal, openIncom
     position -= rows[name]
   }
 
-  const className = { incomes: "income", transfers: "transfer", expenses: null, instalments: "instalment" }[group]
+  const className = { incomes: "income", transfers: "transfer", expenses: null, recurring: "recurring", instalments: "instalment" }[group]
   // The record the search went to: its cells are marked for a moment (`td.highlight`).
-  const type = { incomes: "income", transfers: "transfer", expenses: "expense", instalments: "expense" }[group]
+  const type = { incomes: "income", transfers: "transfer", expenses: "expense", recurring: "expense", instalments: "expense" }[group]
   const marked = item => !!item && state.highlight?.type === type && state.highlight?.id === item.id
-  const open = { incomes: openIncomeModal, transfers: openTransferModal, expenses: openModal, instalments: openModal }[group]
+  const open = { incomes: openIncomeModal, transfers: openTransferModal, expenses: openModal, recurring: openModal, instalments: openModal }[group]
 
   return (
     <TableRow key={`row_${index}`}>

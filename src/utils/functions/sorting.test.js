@@ -44,6 +44,16 @@ describe("sortItems", () => {
   })
 })
 
+describe("the recurring group", () => {
+  it("is sorted like the rest, by its amount", () => {
+    const rules = [e(1, "2026-10-05", 100, "a", null), e(2, "2026-10-05", 300, "b", null)]
+    const [source] = sortSources([{ id: 1, expenses: [], recurring: rules, instalments: [], incomes: [] }], "amount-desc", [])
+
+    expect(source.recurring.map(rule => rule.id)).toEqual([2, 1])
+    expect(sortItems(rules, "amount-asc", "recurring", {}).map(rule => rule.id)).toEqual([1, 2])
+  })
+})
+
 describe("sortSources", () => {
   it("keeps the sources, their order and the input untouched", () => {
     const sources = [{ id: 9, expenses: items, instalments: [], incomes: [], transfers: undefined }]

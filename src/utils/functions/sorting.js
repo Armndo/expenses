@@ -18,6 +18,7 @@ export const DEFAULT_SORT = "date-desc"
 const AMOUNTS = {
   expenses: expense => expense.amount,
   instalments: monthlyShare,
+  recurring: recurring => recurring.amount,
   incomes: income => income.amount,
   transfers: transfer => transfer.signed_amount,
 }
@@ -67,6 +68,7 @@ export function sortSources(sources, sort, categories = []) {
   return sources.map(source => ({
     ...source,
     expenses: sortItems(source.expenses ?? [], sort, "expenses", names),
+    recurring: sortItems(source.recurring ?? [], sort, "recurring", names),
     instalments: sortItems(source.instalments ?? [], sort, "instalments", names),
     incomes: sortItems(source.incomes ?? [], sort, "incomes", names),
     transfers: source.transfers ? sortItems(source.transfers, sort, "transfers", names) : source.transfers,

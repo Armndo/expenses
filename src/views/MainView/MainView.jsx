@@ -2,7 +2,7 @@ import { api_url, env_name } from "@/env"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { CHIP_COLORS, DEFAULT_SORT, emptyFilters, SORT_OPTIONS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, sortSources, standardDate } from "@/utils/functions"
+import { CHIP_COLORS, DEFAULT_SORT, EVERY_OPTIONS, billingOf, chargesIn, emptyFilters, SORT_OPTIONS, activeSources, defaultTransferFrom, incomeSources, numberFormat, rateFormat, sortSources, standardDate, withRecurring } from "@/utils/functions"
 import { OverviewModal, ExpensesModal, ExpensesTable, IncomesModal, ManageModal, MonthPicker, RatesModal, SearchModal, SettingsModal, TransfersModal, ViewBar } from "@/components"
 import { TYPE_COLORS } from "@/components/ViewBar/TypeChips"
 import "./MainView.css"
@@ -119,8 +119,9 @@ export function MainView({ }) {
     .then(res => setState(prev => ({
       ...prev,
       date,
-      rawSources: res.data.expenses,
-      sources: sortSources(res.data.expenses, prev.sort, res.data.categories),
+      // The recurring expenses come in `expenses`: here they are a group of their own (`recurring`).
+      rawSources: withRecurring(res.data.expenses),
+      sources: sortSources(withRecurring(res.data.expenses), prev.sort, res.data.categories),
       categories: res.data.categories,
       filters: prev.filtersMonth === date ? prev.filters : emptyFilters(prev.filters.types),
       filtersMonth: date,
@@ -192,7 +193,8 @@ export function MainView({ }) {
   function goToRecord(row) {
     const on = shownMonth()
     const shown = `${on.year}-${String(on.month + 1).padStart(2, "0")}`
-    const inRange = row.period_last && shown >= row.period && shown <= row.period_last
+    // An instalment, or a recurring expense, stays on the month on screen when it has a charge there.
+    const inRange = (row.period_last || row.recurs_every) && shown >= row.period && (!row.period_last || shown <= row.period_last) && (!row.recurs_every || chargesIn(row.period, row.period_last, shown, row.recurs_every))
     const [year, month] = (inRange ? shown : row.period).split("-").map(Number)
 
     setState(prev => ({ ...prev, searchModal: false, highlight: { type: row.type, id: row.id } }))
@@ -236,9 +238,14 @@ export function MainView({ }) {
         amount: null,
         description: null,
         instalments: null,
+        recurs_every: null,
+        ends_on: null,
         next: false,
         source_id: defaultSource,
         ...expense,
+        // The form's own fields: how it bills, and whether "Every" is a number of its own (not one of the options).
+        billing: billingOf(expense),
+        custom_every: !!expense.recurs_every && !EVERY_OPTIONS.some(option => option.value === +expense.recurs_every),
       },
     }))
   }

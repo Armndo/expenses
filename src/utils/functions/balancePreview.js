@@ -25,16 +25,31 @@ const NO_EFFECT = { balance: 0, previous: 0, moved: 0 }
 /**
  * How many of the billing periods of a record count up to the month on screen: from `period` to `last` (an instalment; a regular
  * record has just the one) but never past `shown`, since a source's position adds the months up to the one on screen. 0 when it
- * starts after `shown`. All are `YYYY-MM`.
+ * starts after `shown`. All are `YYYY-MM`. A recurring expense (`every` months, 1 by default for the rest) has a charge in `period` and
+ * in every period `every` months after it, up to `last` (the period of its last charge) or, while it goes on, up to `shown`.
  */
-export function periodsUpTo(period, last, shown) {
+export function periodsUpTo(period, last, shown, every = null) {
   if (!period) {
     return 0
+  }
+
+  if (every) {
+    const end = Math.min(last ? monthIndex(last) : Infinity, monthIndex(shown))
+
+    return Math.max(0, Math.floor((end - monthIndex(period)) / every) + 1)
   }
 
   const end = Math.min(monthIndex(last ?? period), monthIndex(shown))
 
   return Math.max(0, end - monthIndex(period) + 1)
+}
+
+/**
+ * Whether a record has a charge in the month `month` (`YYYY-MM`): a regular record in its period, an instalment in every period from the first
+ * to the last, a recurring one (`every` months) in its first period and every `every` months after it until `last`.
+ */
+export function chargesIn(period, last, month, every = null) {
+  return periodsUpTo(period, last, month, every) - periodsUpTo(period, last, previousKey(month), every) > 0
 }
 
 /**
@@ -45,10 +60,11 @@ export function periodsUpTo(period, last, shown) {
  *
  * - A transfer counts by the calendar month of its date (`period` is that month): in the month on screen it moves the balance and
  *   the month's payments, in an earlier one the balance and the previous balance, and a later one changes nothing.
- * - An expense or an income counts per billing period: `period` and `last` come from `GET /period`, and an instalment adds its
- *   `amount` (the monthly share) for each period up to the month on screen.
+ * - An expense or an income counts per billing period: `period` and `last` come from `GET /period`, an instalment adds its
+ *   `amount` (the monthly share) for each period up to the month on screen, and a recurring expense (`every` months) its amount for each
+ *   of its charges up to it.
  */
-export function recordEffect({ kind, amount, period, last }, shown) {
+export function recordEffect({ kind, amount, period, last, every = null }, shown) {
   if (!period || !Number.isFinite(amount) || amount === 0) {
     return NO_EFFECT
   }
@@ -65,8 +81,8 @@ export function recordEffect({ kind, amount, period, last }, shown) {
   }
 
   return {
-    balance: cents(amount * periodsUpTo(period, last, shown)),
-    previous: cents(amount * periodsUpTo(period, last, previousKey(shown))),
+    balance: cents(amount * periodsUpTo(period, last, shown, every)),
+    previous: cents(amount * periodsUpTo(period, last, previousKey(shown), every)),
     moved: 0,
   }
 }

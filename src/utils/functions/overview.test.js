@@ -50,6 +50,15 @@ describe("overviewSources", () => {
     expect(without.items.map(item => item.name)).toEqual(["Invex", "Azteca"])
   })
 
+  it("counts the recurring expenses as what the source paid in full, until they have a type of their own", () => {
+    const card = { id: 1, name: "Invex", kind: "card", currency: "MXN", expenses: [{ amount: 100 }], recurring: [{ amount: 199 }], instalments: [] }
+    const out = overviewSources([card], {})
+
+    expect(out.items[0]).toMatchObject({ expenses_count: 2, expenses_sum_amount: 299 })
+    expect(out.split.credit.amount).toBe(299)
+    expect(out.types[0]).toMatchObject({ expenses_count: 2, expenses_sum_amount: 299 })
+  })
+
   it("gives each type the shape of a category so the bars and the pie can draw it", () => {
     const { types } = overviewSources(sources, { USD: 20 })
 

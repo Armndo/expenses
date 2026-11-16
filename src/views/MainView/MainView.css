@@ -42,6 +42,10 @@ div.expenses-card > .MuiCardContent-root {
   text-align: center;
 }
 
+td.recurring {
+  background: #f0b0d8;
+}
+
 td.instalment {
   background: #bdbaff;
 }

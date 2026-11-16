@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { expenseDelta, periodText, periodsUpTo, previewBudget, previewSource, recordEffect } from "./balancePreview"
+import { chargesIn, expenseDelta, periodText, periodsUpTo, previewBudget, previewSource, recordEffect } from "./balancePreview"
 
 const bank = { id: 1, name: "Azteca", kind: "account", currency: "MXN", balance: 20000, previous_balance: 20000 }
 const card = { id: 2, name: "Invex", kind: "card", currency: "MXN", balance: -5500, previous_balance: -1300, transfers: [] }
@@ -13,6 +13,36 @@ describe("periodsUpTo", () => {
     expect(periodsUpTo("2026-08", "2026-09", "2026-12")).toBe(2) // never past its last
     expect(periodsUpTo("2025-12", "2026-02", "2026-01")).toBe(2) // across the year
     expect(periodsUpTo("2025-12", null, "2026-01")).toBe(1) // a single period that is over still counts once
+  })
+})
+
+describe("recurring expenses", () => {
+  it("counts a charge in its first period and every N months after it, up to the month on screen", () => {
+    expect(periodsUpTo("2026-08", null, "2026-10", 1)).toBe(3) // Aug, Sep, Oct
+    expect(periodsUpTo("2026-08", null, "2026-11", 3)).toBe(2) // Aug, Nov
+    expect(periodsUpTo("2026-08", null, "2027-08", 12)).toBe(2) // Aug 26, Aug 27
+    expect(periodsUpTo("2026-08", null, "2027-07", 12)).toBe(1)
+    expect(periodsUpTo("2026-11", null, "2026-10", 1)).toBe(0) // it starts after
+  })
+
+  it("stops at the period of its last charge", () => {
+    expect(periodsUpTo("2026-08", "2026-10", "2027-03", 1)).toBe(3)
+    expect(periodsUpTo("2026-08", "2027-02", "2027-08", 3)).toBe(3) // Aug, Nov, Feb
+  })
+
+  it("has a charge in a month or not", () => {
+    expect(chargesIn("2026-08", null, "2026-11", 3)).toBe(true)
+    expect(chargesIn("2026-08", null, "2026-10", 3)).toBe(false)
+    expect(chargesIn("2026-08", "2026-09", "2026-10", 1)).toBe(false) // it already ended
+    expect(chargesIn("2026-10", null, "2026-10")).toBe(true) // a regular expense: in its period only
+    expect(chargesIn("2026-10", null, "2026-11")).toBe(false)
+    expect(chargesIn("2026-08", "2026-10", "2026-09")).toBe(true) // an instalment: in each of its periods
+  })
+
+  it("weighs on the balance with each of its charges, and on the previous balance with those before the month on screen", () => {
+    expect(recordEffect({ kind: "periodic", amount: -100, period: "2026-08", last: null, every: 1 }, "2026-10")).toEqual({ balance: -300, previous: -200, moved: 0 })
+    expect(recordEffect({ kind: "periodic", amount: -100, period: "2026-08", last: null, every: 3 }, "2026-10")).toEqual({ balance: -100, previous: -100, moved: 0 })
+    expect(recordEffect({ kind: "periodic", amount: -100, period: "2026-08", last: null, every: 3 }, "2026-11")).toEqual({ balance: -200, previous: -100, moved: 0 })
   })
 })
 

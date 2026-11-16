@@ -13,7 +13,7 @@ export function visibleSources(state) {
   }
 
   const result = filterSources(state.sources, state.filters, { categories: state.categories, rates: state.rates })
-    .filter(source => source.incomes.length > 0 || (source.transfers?.length ?? 0) > 0 || source.expenses.length > 0 || source.instalments.length > 0)
+    .filter(source => source.incomes.length > 0 || (source.transfers?.length ?? 0) > 0 || source.expenses.length > 0 || (source.recurring?.length ?? 0) > 0 || source.instalments.length > 0)
 
   last = { sources: state.sources, filters: state.filters, categories: state.categories, rates: state.rates, result }
 

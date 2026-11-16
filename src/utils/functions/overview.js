@@ -42,6 +42,7 @@ export const CHIP_COLORS = {
   debit: "#c8e6c9",
   debt: "#ffcdd2",
   instalments: "#bdbaff",
+  recurring: "#f0b0d8",       // between the expenses and the instalments in the table
   lastMonthOwed: "#ef9a9a",   // the red of the "Last month owed" chip of a card
   lastMonthPaid: "#c5e1a5",   // the acid green of the "Last month paid" chip of a card
   balance: "#bbdefb",
@@ -70,9 +71,10 @@ export function overviewSources(sources, rates) {
   const counts = { credit: 0, debit: 0, instalments: 0 }
 
   sources.forEach((source, index) => {
-    const cash = sum(source.expenses.map(expense => expense.amount))
+    // The recurring expenses (their own group in the table) still count as what the source paid in full here, until the Sources tab has a type of their own.
+    const cash = sum([...source.expenses, ...(source.recurring ?? [])].map(expense => expense.amount))
     const instalments = sum(source.instalments.map(item => monthlyShare(item)))
-    const count = source.expenses.length + source.instalments.length
+    const count = source.expenses.length + (source.recurring ?? []).length + source.instalments.length
     const rate = source.currency === "MXN" ? 1 : rates?.[source.currency]
 
     if (count === 0) {
@@ -87,7 +89,7 @@ export function overviewSources(sources, rates) {
 
     split[isCard(source) ? "credit" : "debit"] += cash * rate
     split.instalments += instalments * rate
-    counts[isCard(source) ? "credit" : "debit"] += source.expenses.length
+    counts[isCard(source) ? "credit" : "debit"] += source.expenses.length + (source.recurring ?? []).length
     counts.instalments += source.instalments.length
 
     items.push({

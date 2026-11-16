@@ -4,6 +4,7 @@ import { normalizeText } from "./search"
 /** The groups of rows of a source, in the order the table shows them. */
 export const FILTER_TYPES = [
   { key: "expenses", label: "Expenses" },
+  { key: "recurring", label: "Recurring" },
   { key: "instalments", label: "Instalments" },
   { key: "incomes", label: "Incomes" },
   { key: "transfers", label: "Transfers" },
@@ -59,7 +60,10 @@ function pesos(item, group, source, rates) {
   return rate ? amount * rate : null
 }
 
-const AMOUNT_GROUPS = ["expenses", "instalments"]
+const AMOUNT_GROUPS = ["expenses", "recurring", "instalments"]
+
+/** The groups of rows of a source, in the order of the table. */
+const GROUPS = ["expenses", "recurring", "instalments", "incomes", "transfers"]
 
 function every(source, group, items, filters, context, needles) {
   if (!filters.types[group]) {
@@ -113,19 +117,20 @@ export function filterSources(sources, filters, { categories = [], rates = {} } 
   return sources.map(source => ({
     ...source,
     expenses: every(source, "expenses", source.expenses ?? [], filters, context, needles),
+    recurring: every(source, "recurring", source.recurring ?? [], filters, context, needles),
     instalments: every(source, "instalments", source.instalments ?? [], filters, context, needles),
     incomes: every(source, "incomes", source.incomes ?? [], filters, context, needles),
     transfers: source.transfers ? every(source, "transfers", source.transfers, filters, context, needles) : source.transfers,
   }))
 }
 
-/** The smallest and the largest amount in pesos of the month's expenses and instalments (the hints of the amount fields). */
+/** The smallest and the largest amount in pesos of the month's expenses, recurring ones and instalments (the hints of the amount fields). */
 export function filterBounds(sources, rates = {}) {
   let min = null
   let max = null
 
   for (const source of sources) {
-    for (const group of ["expenses", "instalments", "incomes", "transfers"]) {
+    for (const group of GROUPS) {
       for (const item of source[group] ?? []) {
         if (AMOUNT_GROUPS.includes(group)) {
           const value = pesos(item, group, source, rates)
@@ -143,7 +148,7 @@ export function filterBounds(sources, rates = {}) {
 }
 
 function sourcesWithRows(sources) {
-  return sources.filter(source => ["expenses", "instalments", "incomes", "transfers"].some(group => (source[group] ?? []).length > 0))
+  return sources.filter(source => GROUPS.some(group => (source[group] ?? []).length > 0))
 }
 
 /** How many records and sources are left of the month's (a transfer is on two sources but is one record). */
@@ -152,9 +157,9 @@ export function filterCounts(all, shown) {
     const set = new Set()
 
     for (const source of sources) {
-      for (const group of ["expenses", "instalments", "incomes", "transfers"]) {
+      for (const group of GROUPS) {
         for (const item of source[group] ?? []) {
-          set.add(`${group === "instalments" ? "expenses" : group}-${item.id}`)
+          set.add(`${group === "instalments" || group === "recurring" ? "expenses" : group}-${item.id}`)
         }
       }
     }

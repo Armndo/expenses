@@ -17,7 +17,7 @@ const sources = [
     transfers: [{ id: 5, date: "2026-11-06", signed_amount: -1500, amount: 1500, description: "Pago", counterpart_name: "Invex" }],
   },
 ]
-const all = { expenses: true, instalments: true, incomes: true, transfers: true }
+const all = { expenses: true, recurring: true, instalments: true, incomes: true, transfers: true }
 const f = patch => ({ ...emptyFilters(all), ...patch })
 const ids = (result, group) => result.flatMap(source => source[group].map(item => item.id))
 const filter = (patch, context = { categories, rates }) => filterSources(sources, f(patch), context)
@@ -71,6 +71,32 @@ describe("filterSources: types, categories, amount", () => {
   it("keeps a row whose currency has no rate, and does not touch incomes and transfers", () => {
     expect(ids(filter({ min: 150, max: 1000 }, { categories, rates: {} }), "expenses")).toEqual([2, 6])
     expect(ids(filter({ min: 5000 }), "incomes")).toEqual([4])
+  })
+})
+
+describe("filterSources: recurring expenses", () => {
+  const withRule = [{ ...sources[0], recurring: [{ id: 7, date: "2026-10-10", occurrence_date: "2026-11-10", amount: 199, recurs_every: 1, description: "Netflix", category_id: 2 }] }, sources[1]]
+  const run = patch => filterSources(withRule, f(patch), { categories, rates })
+
+  it("turns off with its own type, and no other", () => {
+    expect(ids(run({ types: { ...all, recurring: false } }), "recurring")).toEqual([])
+    expect(ids(run({ types: { ...all, expenses: false } }), "recurring")).toEqual([7])
+  })
+
+  it("is found by the text and by the category, like the expenses", () => {
+    expect(ids(run({ text: "netflix" }), "recurring")).toEqual([7])
+    expect(ids(run({ categories: [2] }), "recurring")).toEqual([7])
+    expect(ids(run({ categories: [1] }), "recurring")).toEqual([])
+  })
+
+  it("is compared by its amount, in pesos", () => {
+    expect(ids(run({ min: 150, max: 250 }), "recurring")).toEqual([7])
+    expect(ids(run({ min: 300 }), "recurring")).toEqual([])
+  })
+
+  it("counts in the bounds and in the records", () => {
+    expect(filterBounds(withRule, rates).min).toBe(100)
+    expect(filterCounts(withRule, withRule).totalRecords).toBe(7)
   })
 })
 

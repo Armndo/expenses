@@ -1,5 +1,5 @@
 import { ExpenseItem } from "@/components"
-import { currencySymbol, emptyFilters, hasFilters, isCard, kindLabel, lastMonthCleared, lastMonthOwed, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
+import { CHIP_COLORS, currencySymbol, emptyFilters, hasFilters, isCard, kindLabel, lastMonthCleared, lastMonthOwed, lastMonthPaid, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
 import { Fragment, useEffect } from "react"
 import { Button, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material"
 
@@ -11,17 +11,19 @@ const CREDIT_BG = "#e1bee7"    // soft purple, apart from the lilac of the insta
 const DEBIT_BG = "#d7ccc8"     // soft brown
 const BALANCE_BG = "#bbdefb"   // the same as the Balance chip of the month summary
 const TRANSFER_BG = "#ffe0b2"   // the same as the transfer rows (td.transfer)
+const RECURRING_BG = CHIP_COLORS.recurring   // the same as the recurring rows (td.recurring)
 
 /** The amounts of a source in the header, left out when they are 0 (to the cent), separated by a dot. */
 // The chips that add up rows stay at the whole month's value; one is dimmed when the filters leave out part of what it adds up, so it is not read
 // as what is shown.
 const DIMMED = 0.5
 
-/** What the chips that add up rows say for a source: incomes, expenses in full, instalments (their monthly share) and payments received. */
+/** What the chips that add up rows say for a source: incomes, expenses in full, recurring ones, instalments (their monthly share) and payments received. */
 function sums(source) {
   return {
     income: source.incomes.reduce((a, b) => a + b.amount, 0),
     cash: source.expenses.reduce((a, b) => a + b.amount, 0),
+    recurring: (source.recurring ?? []).reduce((a, b) => a + b.amount, 0),
     instalments: source.instalments.reduce((a, b) => a + monthlyShare(b), 0),
     // What the card received in payments this month.
     paid: (source.transfers ?? []).filter(t => t.direction === "in").reduce((a, b) => a + b.signed_amount, 0),
@@ -29,7 +31,7 @@ function sums(source) {
 }
 
 function SourceChips({ source, shown, rates }) {
-  const { cash, instalments, paid } = sums(source)
+  const { cash, recurring, instalments, paid } = sums(source)
   const now = sums(shown ?? source)
   // A chip is dimmed when what is shown adds up to something else than the whole month.
   const differs = (whole, part) => Math.abs(whole - part) >= 0.005
@@ -43,8 +45,9 @@ function SourceChips({ source, shown, rates }) {
   const chips = [
     { title: "Income", dim: differs(sums(source).income, now.income), sx: { background: INCOME_BG }, value: sums(source).income },
     { title: "In full", dim: differs(cash, now.cash), sx: { background: "transparent", border: "1px solid #c0c0c0" }, value: cash },
+    { title: "Recurring", dim: differs(recurring, now.recurring), sx: { background: RECURRING_BG }, value: recurring },
     { title: "Instalments", dim: differs(instalments, now.instalments), sx: { background: "#bdbaff" }, value: instalments },
-    { title: "Total", dim: differs(cash + instalments, now.cash + now.instalments), sx: { background: "#c0c0c0" }, value: cash + instalments, equivalent: true },
+    { title: "Total", dim: differs(cash + recurring + instalments, now.cash + now.recurring + now.instalments), sx: { background: "#c0c0c0" }, value: cash + recurring + instalments, equivalent: true },
     card && { title: "Paid", dim: differs(paid, now.paid), sx: { background: TRANSFER_BG }, value: paid },
     source.balance != null && {
       title: card ? "Owed" : "Balance",
@@ -81,6 +84,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
     incomes: Math.max(0, ...sources.map(source => source.incomes.length)),
     transfers: Math.max(0, ...sources.map(source => source.transfers?.length ?? 0)),
     expenses: Math.max(0, ...sources.map(source => source.expenses.length)),
+    recurring: Math.max(0, ...sources.map(source => source.recurring?.length ?? 0)),
     instalments: Math.max(0, ...sources.map(source => source.instalments.length)),
   }
 
@@ -122,7 +126,7 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
           </TableRow>
         </TableHead>
         <TableBody>
-          {Array(rows.incomes + rows.transfers + rows.expenses + rows.instalments).fill(null).map((_, index) =>
+          {Array(rows.incomes + rows.transfers + rows.expenses + rows.recurring + rows.instalments).fill(null).map((_, index) =>
             <ExpenseItem
               key={index}
               index={index}
