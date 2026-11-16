@@ -1,3 +1,11 @@
+## 0.11.0 (2026-11-16)
+
+### Feat
+
+- **chips**: order the chips like the table and rename Debt, Owed and Last month owed
+- **recurring**: add the recurring chip to the summary and a type to the overview
+- **recurring**: add recurring expenses to the form, the table, the filters and the search
+
 ## 0.10.0 (2026-11-16)
 
 ### Feat
