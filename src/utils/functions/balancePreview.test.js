@@ -46,6 +46,30 @@ describe("recurring expenses", () => {
   })
 })
 
+describe("cutting a recurring expense", () => {
+  // Netflix, 199 a month since March, cut on the charge of November to 249: the new rule adds 249 from November and the old one's 199 from
+  // November are taken away (the charges of March to October are not touched), so each charge up to the month on screen changes by 50.
+  it("changes each charge from the cut up to the month on screen by the difference, and nothing before it", () => {
+    const fromTheCut = (shown) => {
+      const added = recordEffect({ kind: "periodic", amount: -249, period: "2026-11", every: 1 }, shown)
+      const taken = recordEffect({ kind: "periodic", amount: 199, period: "2026-11", every: 1 }, shown)
+
+      return added.balance + taken.balance
+    }
+
+    expect(fromTheCut("2026-10")).toBe(0)
+    expect(fromTheCut("2026-11")).toBe(-50)
+    expect(fromTheCut("2027-01")).toBe(-150)
+  })
+
+  it("follows a change of how often it repeats from the cut: every 3 months instead of every month", () => {
+    const added = recordEffect({ kind: "periodic", amount: -199, period: "2026-11", every: 3 }, "2027-05")
+    const taken = recordEffect({ kind: "periodic", amount: 199, period: "2026-11", every: 1 }, "2027-05")
+
+    expect(added.balance + taken.balance).toBe(199 * (7 - 3))
+  })
+})
+
 describe("recordEffect", () => {
   it("counts a transfer by the calendar month of its date", () => {
     expect(effect({ kind: "transfer", amount: 500, period: "2026-10" })).toEqual({ balance: 500, previous: 0, moved: 500 })

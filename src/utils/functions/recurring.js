@@ -36,6 +36,66 @@ export function withRecurring(sources) {
   })
 }
 
+/** `YYYY-MM-DD` of a date or a datetime. */
+function day(value) {
+  return `${value ?? ""}`.slice(0, 10)
+}
+
+/**
+ * Whether a row of a rule is a charge after its first one: only then is there something before it to keep, so "this and the following"
+ * means something different from "all the charges" (on the first one they are the same and the form does not ask). `occurrence_date` is
+ * the date of the charge of the row and `date` the one of the rule.
+ */
+export function canCut(expense) {
+  return isRecurring(expense ?? {}) && !!expense.occurrence_date && day(expense.occurrence_date) > day(expense.date)
+}
+
+/**
+ * What an edit of the form applies to: `following` (the charge of the row and the ones after it: the rule ends the day before and a new
+ * one starts there) or `all` (the whole rule, the past ones too). A new expense, the first charge and an expense that stops being a
+ * repetition in the form are always `all`; on any other charge it is `following` unless the form says otherwise.
+ */
+export function scopeOf(expense) {
+  if (!expense?.id || !canCut(expense) || billingOf(expense) !== "repeats") {
+    return "all"
+  }
+
+  return expense.scope === "all" ? "all" : "following"
+}
+
+/** The date a rule of the form starts on: the charge that is cut for "this and the following", the date of the rule for the rest. */
+export function startOf(expense) {
+  return scopeOf(expense) === "following" ? day(expense.occurrence_date) : expense?.date
+}
+
+/** The query of the request that saves the form: the scope and, to cut, the charge. Nothing for a new expense or one that is not a row of a rule. */
+export function scopeQuery(expense) {
+  if (!expense?.id || !expense.occurrence_date) {
+    return ""
+  }
+
+  return scopeOf(expense) === "following" ? `?scope=following&occurrence_date=${day(expense.occurrence_date)}` : "?scope=all"
+}
+
+/** The query of the request that deletes a row of a rule: `following` ends the rule the day before its charge, `all` deletes it with every charge. */
+export function deleteQuery(expense, scope) {
+  return scope === "following" && canCut(expense) ? `?scope=following&occurrence_date=${day(expense.occurrence_date)}` : "?scope=all"
+}
+
+/**
+ * The record of the form and the one it was, as the preview of the balance has to see them: for "this and the following" both start on the
+ * charge that is cut (the charges before it do not change), so the preview takes the old rule's charges from there away and adds the new one's.
+ */
+export function previewRecords(record, original) {
+  if (!record || scopeOf(record) !== "following") {
+    return { record, original }
+  }
+
+  const from = day(record.occurrence_date)
+
+  return { record: { ...record, date: from }, original: original ? { ...original, date: from } : original }
+}
+
 /** How an expense of the form is billed: `repeats`, `instalments` or `one` payment. */
 export function billingOf(expense) {
   if (expense?.billing) {
@@ -66,8 +126,8 @@ export function expenseError(expense) {
       return "Incorrect 'Every' format."
     }
 
-    if (expense.ends_on && expense.date && expense.ends_on < expense.date) {
-      return "'Until' cannot be before the first charge."
+    if (expense.ends_on && startOf(expense) && expense.ends_on < startOf(expense)) {
+      return scopeOf(expense) === "following" ? "'Until' cannot be before this charge." : "'Until' cannot be before the first charge."
     }
   }
 
@@ -81,6 +141,12 @@ export function expensePayload(expense) {
 
   delete rest.billing
   delete rest.custom_every
+  delete rest.scope
+
+  // To cut, the new rule starts on the charge that is cut: the date of the rule is not sent (the API would not read it).
+  if (scopeOf(expense) === "following") {
+    delete rest.date
+  }
 
   return {
     ...rest,

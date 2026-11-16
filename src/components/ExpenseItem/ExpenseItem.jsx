@@ -1,7 +1,8 @@
 import { api_url } from "@/env"
-import { currencySymbol, formatDate, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
-import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material"
+import { canCut, currencySymbol, deleteQuery, formatDate, monthlyShare, numberFormat, visibleSources } from "@/utils/functions"
+import { Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Radio, RadioGroup, TableCell, TableRow, Typography } from "@mui/material"
 import axios from "axios"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 function monthlyAmount(instalment) {
@@ -34,21 +35,35 @@ function describe(item, target) {
 function ShownItem({ categories, setState, item, source, target = "expenses", className = null, openModal = () => null }) {
   const navigate = useNavigate()
 
-  // A recurring expense is one rule: deleting it deletes every charge of it, the past ones too, and the API asks for it with `scope=all`.
+  // A recurring expense is one rule: on a charge after the first one it asks whether to end the rule from there or to delete all of it
+  // (the past charges too); the first charge has nothing before it to keep, so it only asks to delete the rule. The API asks for the scope.
   const recurring = target === "recurring"
+  const [asking, setAsking] = useState(false)
+  const [scope, setScope] = useState("following")
 
   function destroy() {
-    if (!confirm(recurring ? "Delete this recurring expense and all its charges, the past ones too?" : "Delete?")) {
+    if (recurring && canCut(item)) {
+      setScope("following")
+      setAsking(true)
       return
     }
 
+    if (!confirm(recurring ? "Delete this recurring expense and all its charges?" : "Delete?")) {
+      return
+    }
+
+    remove(recurring ? "?scope=all" : "")
+  }
+
+  function remove(query) {
+    setAsking(false)
     setState(prev => ({
       ...prev,
       loading: true,
     }))
 
     axios.delete(
-      `${api_url}/${RESOURCES[target]}/${item.id}${recurring ? "?scope=all" : ""}`,
+      `${api_url}/${RESOURCES[target]}/${item.id}${query}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -85,6 +100,23 @@ function ShownItem({ categories, setState, item, source, target = "expenses", cl
           <Button variant="contained" color="warning" onClick={() => openModal(target === "transfers" ? item : { ...item, source_id: source.id })}>✎</Button>
           <Button variant="contained" color="error" onClick={destroy}>⌫</Button>
         </ButtonGroup>
+        {asking && <Dialog open onClose={() => setAsking(false)}>
+          <DialogTitle>Delete recurring expense</DialogTitle>
+          <DialogContent>
+            <RadioGroup value={scope} onChange={e => setScope(e.target.value)}>
+              <FormControlLabel value="following" control={<Radio size="small" />} label={<>
+                This and following charges <Typography component="span" variant="caption" color="text.secondary">stops charging from {formatDate(item.occurrence_date)}, the earlier ones stay</Typography>
+              </>} />
+              <FormControlLabel value="all" control={<Radio size="small" />} label={<>
+                The whole rule <Typography component="span" variant="caption" color="text.secondary">deletes it with all its charges, the past ones too</Typography>
+              </>} />
+            </RadioGroup>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setAsking(false)}>Cancel</Button>
+            <Button color="error" variant="contained" onClick={() => remove(deleteQuery(item, scope))}>Delete</Button>
+          </DialogActions>
+        </Dialog>}
       </TableCell>
     </>
   )

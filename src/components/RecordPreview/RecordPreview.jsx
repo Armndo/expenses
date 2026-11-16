@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types -- the project has no PropTypes; `state` is the one big object of MainView */
 import { api_url } from "@/env"
-import { billingOf, chargesIn, currencySymbol, everyText, expenseDelta, numberFormat, periodText, previewBudget, previewSource, recordEffect } from "@/utils/functions"
+import { billingOf, chargesIn, currencySymbol, everyText, expenseDelta, numberFormat, periodText, previewBudget, previewRecords, previewSource, recordEffect } from "@/utils/functions"
 import { Box, Typography } from "@mui/material"
 import axios from "axios"
 import { useEffect, useState } from "react"
@@ -121,8 +121,9 @@ function effectsBySource(entries, shown) {
  * month on screen); only the billing month of an expense or an income comes from the API.
  */
 export function RecordPreview({ state, kind }) {
-  const record = state[kind]
-  const original = state[`${kind}Original`] ?? null
+  // Cutting a rule ("this and the following") starts both the record and the one it was on the charge that is cut.
+  const { record, original: previous } = kind === "expense" ? previewRecords(state[kind], state[`${kind}Original`] ?? null) : { record: state[kind], original: state[`${kind}Original`] ?? null }
+  const original = previous ?? null
   const isTransfer = kind === "transfer"
   const info = usePeriod(isTransfer ? null : record)
   const oldInfo = usePeriod(isTransfer || !original ? null : original)

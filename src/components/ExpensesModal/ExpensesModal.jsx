@@ -1,8 +1,8 @@
 import { api_url } from "@/env"
 import { RecordPreview } from "@/components/RecordPreview/RecordPreview"
-import { EVERY_OPTIONS, activeCategories, activeSources, billingOf, expenseError, expensePayload, filterCategories, rememberPeriod, sourceOptionLabel } from "@/utils/functions"
+import { EVERY_OPTIONS, activeCategories, activeSources, billingOf, canCut, expenseError, expensePayload, filterCategories, formatDate, rememberPeriod, scopeOf, scopeQuery, sourceOptionLabel, startOf } from "@/utils/functions"
 import { AttachMoneyTwoTone, CalendarMonthTwoTone, CategoryTwoTone, CreditCardTwoTone, EventRepeatTwoTone, RepeatTwoTone, TextSnippetTwoTone } from "@mui/icons-material"
-import { Autocomplete, Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, Box, InputAdornment, InputLabel, MenuItem, Select, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
+import { Autocomplete, Button, Card, CardActions, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormGroup, Box, InputAdornment, InputLabel, MenuItem, Radio, RadioGroup, Select, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 
@@ -93,7 +93,7 @@ export function ExpensesModal({ state, setState }) {
     }))
 
     axios.put(
-      `${api_url}/expenses/${expense.id}`,
+      `${api_url}/expenses/${expense.id}${scopeQuery(state.expense)}`,
       expense,
       {
         headers: {
@@ -142,6 +142,11 @@ export function ExpensesModal({ state, setState }) {
     }))
   }
 
+  /** What an edit of a charge of a rule applies to: this charge and the following ones, or all of them (the past ones too). */
+  function setScope(scope) {
+    setState(prev => ({ ...prev, expense: { ...prev.expense, scope } }))
+  }
+
   function closeModal() {
     setState(prev => ({
       ...prev,
@@ -163,6 +168,9 @@ export function ExpensesModal({ state, setState }) {
   }
 
   const billing = billingOf(state.expense ?? {})
+  // Editing a charge of a rule: it can cut (this and the following) or change all of it; the first charge has nothing before it to keep.
+  const cuts = !!state.expense?.id && canCut(state.expense) && billing === "repeats"
+  const following = scopeOf(state.expense ?? {}) === "following"
 
   return (
     state.modal && <div className={`expenses-modal show`} onClick={closeModal}>
@@ -186,7 +194,9 @@ export function ExpensesModal({ state, setState }) {
                 {activeSources(state.sources, state.expense?.source_id).map(source => <MenuItem key={`source_${source.id}`} value={source.id}>{sourceOptionLabel(source)}</MenuItem>)}
               </Select>
             </FormControl>
-            <TextField
+            {following ? <Typography variant="body2" color="text.secondary" sx={{ mb: ".5rem" }}>
+              Starts on the charge of <strong>{formatDate(state.expense.occurrence_date)}</strong>
+            </Typography> : <TextField
               sx={{ width: "100%" }}
               required
               type="date"
@@ -201,7 +211,7 @@ export function ExpensesModal({ state, setState }) {
                   </InputAdornment>
                 }
               }}
-            />
+            />}
             <FormGroup sx={{ float: "right" }}>
               <FormControlLabel
                 control={<Checkbox
@@ -261,9 +271,17 @@ export function ExpensesModal({ state, setState }) {
                 }
               }}
             />}
-            {billing === "repeats" && state.expense?.id && <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: ".5rem" }}>
-              Changes apply to every charge of this expense, the past ones too. To change the price from a month on, set an end here and add a new one.
-            </Typography>}
+            {cuts && <Box sx={{ mb: "1rem" }}>
+              <Typography variant="caption" color="text.secondary">Apply to</Typography>
+              <RadioGroup value={following ? "following" : "all"} onChange={e => setScope(e.target.value)}>
+                <FormControlLabel value="following" control={<Radio size="small" />} label={<>
+                  This and following charges <Typography component="span" variant="caption" color="text.secondary">from {formatDate(state.expense.occurrence_date)}, the earlier ones stay</Typography>
+                </>} />
+                <FormControlLabel value="all" control={<Radio size="small" />} label={<>
+                  All charges <Typography component="span" variant="caption" color="text.secondary">from {formatDate(state.expense.date)}, the past ones change too</Typography>
+                </>} />
+              </RadioGroup>
+            </Box>}
             {billing === "repeats" && <Box sx={{ display: "flex", gap: ".5rem", mb: "1rem" }}>
               <FormControl sx={{ flex: 1 }}>
                 <InputLabel id="select-every">Every</InputLabel>
@@ -294,7 +312,7 @@ export function ExpensesModal({ state, setState }) {
                 label="Until"
                 value={state.expense?.ends_on ?? ""}
                 onChange={e => editExpense("expense", "ends_on", e.target.value)}
-                slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: state.expense?.date ?? undefined } }}
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: startOf(state.expense ?? {}) ?? undefined } }}
               />
             </Box>}
             <RecordPreview state={state} kind="expense" />
