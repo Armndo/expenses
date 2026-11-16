@@ -8,6 +8,8 @@
     "host": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "prepare": "husky",
     "deploy": "bash scripts/deploy.sh"
@@ -40,7 +42,8 @@
     "globals": "^15.14.0",
     "husky": "^9.1.7",
     "vite": "^6.1.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^5.1.0"
   },
   "config": {
     "commitizen": {
