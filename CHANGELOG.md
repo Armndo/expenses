@@ -1,3 +1,17 @@
+## 0.10.0 (2026-11-16)
+
+### Feat
+
+- **search**: search all the months from a global button
+- **filters**: drop the date filter and colour the type chips
+- **filters**: search and filter the records of the month from a view bar
+- **preview**: preview the balance of a record and go to its month after saving
+- **navigation**: go to today, sort the rows, search a category and see what a card owes
+
+### Fix
+
+- **filters**: keep the header of each source whole and dim the chips that lose rows
+
 ## 0.9.1 (2026-11-09)
 
 ### Fix
