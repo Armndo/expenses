@@ -37,6 +37,7 @@ function money(value) {
 /** The month totals under the title, from `summary` (the API does the math). */
 const SUMMARY_CHIPS = [
   { key: "spent", title: "Spent", sx: { background: CHIP_COLORS.spent } },
+  { key: "recurring", title: "Recurring", sx: { background: CHIP_COLORS.recurring } },
   { key: "cash", title: "Debit", sx: { background: CHIP_COLORS.debit } },
   { key: "debt", title: "Debt", sx: { background: CHIP_COLORS.debt } },
   { key: "last_month_owed", title: "Last month owed", sx: { background: CHIP_COLORS.lastMonthOwed } },
@@ -419,7 +420,7 @@ export function MainView({ }) {
           subheader={<Box className="summary-chips" sx={{ display: "flex", flexWrap: "wrap", gap: ".5rem", mt: ".5rem" }}>
             {/* The API sends null when there is no value (before the balance start month, or with a missing
                 exchange rate): that chip is left out instead of showing a dash. */}
-            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (!["pending_instalments", "last_month_owed", "last_month_paid"].includes(chip.key) || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
+            {SUMMARY_CHIPS.filter(chip => state.summary?.[chip.key] != null && (!["recurring", "pending_instalments", "last_month_owed", "last_month_paid"].includes(chip.key) || Math.abs(state.summary[chip.key]) >= 0.005)).map(chip => <Tooltip key={chip.key} title={chip.title}>
               <Chip size="small" sx={chip.sx} label={money(state.summary[chip.key])} />
             </Tooltip>)}
             {state.summary?.budget_carry != null && Math.abs(state.summary.budget_carry) >= 0.005 && (({ label, color }) => <Tooltip title="Budget carried over from the previous months">

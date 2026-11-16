@@ -50,19 +50,24 @@ describe("overviewSources", () => {
     expect(without.items.map(item => item.name)).toEqual(["Invex", "Azteca"])
   })
 
-  it("counts the recurring expenses as what the source paid in full, until they have a type of their own", () => {
-    const card = { id: 1, name: "Invex", kind: "card", currency: "MXN", expenses: [{ amount: 100 }], recurring: [{ amount: 199 }], instalments: [] }
+  it("has a type of its own for the recurring expenses, which Credit and Debit do not include", () => {
+    const card = { id: 1, name: "Invex", kind: "card", currency: "MXN", expenses: [{ amount: 100 }], recurring: [{ amount: 199 }], instalments: [{ amount: 1200, instalments: 12 }] }
     const out = overviewSources([card], {})
 
-    expect(out.items[0]).toMatchObject({ expenses_count: 2, expenses_sum_amount: 299 })
-    expect(out.split.credit.amount).toBe(299)
-    expect(out.types[0]).toMatchObject({ expenses_count: 2, expenses_sum_amount: 299 })
+    // by source it is all of it, and by type the four add up to the same total
+    expect(out.items[0]).toMatchObject({ expenses_count: 3, expenses_sum_amount: 399 })
+    expect(out.split.credit.amount).toBe(100)
+    expect(out.split.recurring.amount).toBe(199)
+    expect(out.split.instalments.amount).toBe(100)
+    expect(out.total).toBe(399)
+    expect(out.types.map(type => [type.name, type.expenses_count, type.expenses_sum_amount])).toEqual([["Credit", 1, 100], ["Debit", 0, 0], ["Recurring", 1, 199], ["Instalments", 1, 100]])
+    expect(out.split.recurring.share).toBeCloseTo(199 / 399, 6)
   })
 
   it("gives each type the shape of a category so the bars and the pie can draw it", () => {
     const { types } = overviewSources(sources, { USD: 20 })
 
-    expect(types.map(type => type.name)).toEqual(["Credit", "Debit", "Instalments"])
+    expect(types.map(type => type.name)).toEqual(["Credit", "Debit", "Recurring", "Instalments"])
     expect(types[0]).toMatchObject({ expenses_count: 2, expenses_sum_amount: 150 })
   })
 })

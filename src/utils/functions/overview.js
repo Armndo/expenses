@@ -54,7 +54,7 @@ export const CHIP_COLORS = {
 const SOURCE_COLORS = ["#90caf9", "#a5d6a7", "#ffcc80", "#ce93d8", "#80cbc4", "#f48fb1", "#e6ee9c", "#b0bec5", "#ffab91", "#9fa8da"]
 
 /** The colours of the split in the Sources tab: credit (like the Credit chip), debit (like the Debit chip) and instalments. */
-export const SPLIT_COLORS = { credit: "#e1bee7", debit: "#d7ccc8", instalments: CHIP_COLORS.instalments }
+export const SPLIT_COLORS = { credit: "#e1bee7", debit: "#d7ccc8", recurring: CHIP_COLORS.recurring, instalments: CHIP_COLORS.instalments }
 
 /**
  * The month's spending by source, from the `GET /data` sources and the exchange rates, in pesos (a source in another currency
@@ -67,12 +67,12 @@ export function overviewSources(sources, rates) {
   const sum = values => values.reduce((total, value) => total + value, 0)
   const items = []
   const missing = []
-  const split = { credit: 0, debit: 0, instalments: 0 }
-  const counts = { credit: 0, debit: 0, instalments: 0 }
+  const split = { credit: 0, debit: 0, recurring: 0, instalments: 0 }
+  const counts = { credit: 0, debit: 0, recurring: 0, instalments: 0 }
 
   sources.forEach((source, index) => {
-    // The recurring expenses (their own group in the table) still count as what the source paid in full here, until the Sources tab has a type of their own.
-    const cash = sum([...source.expenses, ...(source.recurring ?? [])].map(expense => expense.amount))
+    const cash = sum(source.expenses.map(expense => expense.amount))
+    const recurring = sum((source.recurring ?? []).map(expense => expense.amount))
     const instalments = sum(source.instalments.map(item => monthlyShare(item)))
     const count = source.expenses.length + (source.recurring ?? []).length + source.instalments.length
     const rate = source.currency === "MXN" ? 1 : rates?.[source.currency]
@@ -88,8 +88,10 @@ export function overviewSources(sources, rates) {
     }
 
     split[isCard(source) ? "credit" : "debit"] += cash * rate
+    split.recurring += recurring * rate
     split.instalments += instalments * rate
-    counts[isCard(source) ? "credit" : "debit"] += source.expenses.length + (source.recurring ?? []).length
+    counts[isCard(source) ? "credit" : "debit"] += source.expenses.length
+    counts.recurring += (source.recurring ?? []).length
     counts.instalments += source.instalments.length
 
     items.push({
@@ -99,15 +101,15 @@ export function overviewSources(sources, rates) {
       color: SOURCE_COLORS[index % SOURCE_COLORS.length],
       disabled: Boolean(source.disabled),
       expenses_count: count,
-      expenses_sum_amount: Math.round((cash + instalments) * rate * 100) / 100,
+      expenses_sum_amount: Math.round((cash + recurring + instalments) * rate * 100) / 100,
     })
   })
 
-  const total = split.credit + split.debit + split.instalments
+  const total = split.credit + split.debit + split.recurring + split.instalments
   const share = value => total > 0 ? value / total : 0
   const top = [...items].sort((a, b) => b.expenses_sum_amount - a.expenses_sum_amount)[0] ?? null
 
-  const types = [["credit", "Credit", "💳"], ["debit", "Debit", "🏦"], ["instalments", "Instalments", "📆"]].map(([key, name, alias]) => ({
+  const types = [["credit", "Credit", "💳"], ["debit", "Debit", "🏦"], ["recurring", "Recurring", "🔁"], ["instalments", "Instalments", "📆"]].map(([key, name, alias]) => ({
     id: key,
     name,
     alias,
@@ -125,6 +127,7 @@ export function overviewSources(sources, rates) {
     split: {
       credit: { amount: split.credit, share: share(split.credit) },
       debit: { amount: split.debit, share: share(split.debit) },
+      recurring: { amount: split.recurring, share: share(split.recurring) },
       instalments: { amount: split.instalments, share: share(split.instalments) },
     },
   }
