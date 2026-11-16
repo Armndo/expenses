@@ -1,3 +1,9 @@
+## 0.12.0 (2026-11-16)
+
+### Feat
+
+- **recurring**: cut a recurring expense from one of its charges
+
 ## 0.11.0 (2026-11-16)
 
 ### Feat
