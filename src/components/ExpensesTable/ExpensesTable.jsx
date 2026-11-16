@@ -43,14 +43,14 @@ function SourceChips({ source, shown, rates }) {
   const label = value => numberFormat(value, 2, symbol) + (rate ? ` ≈ ${numberFormat(value * rate, 2, "$")}` : "")
 
   const chips = [
-    { title: "Income", dim: differs(sums(source).income, now.income), sx: { background: INCOME_BG }, value: sums(source).income },
     { title: "In full", dim: differs(cash, now.cash), sx: { background: "transparent", border: "1px solid #c0c0c0" }, value: cash },
     { title: "Recurring", dim: differs(recurring, now.recurring), sx: { background: RECURRING_BG }, value: recurring },
     { title: "Instalments", dim: differs(instalments, now.instalments), sx: { background: "#bdbaff" }, value: instalments },
     { title: "Total", dim: differs(cash + recurring + instalments, now.cash + now.recurring + now.instalments), sx: { background: "#c0c0c0" }, value: cash + recurring + instalments, equivalent: true },
     card && { title: "Paid", dim: differs(paid, now.paid), sx: { background: TRANSFER_BG }, value: paid },
+    { title: "Income", dim: differs(sums(source).income, now.income), sx: { background: INCOME_BG }, value: sums(source).income },
     source.balance != null && {
-      title: card ? "Owed" : "Balance",
+      title: card ? "To pay" : "Balance",
       sx: { background: card ? OWED_BG : BALANCE_BG },
       value: card ? -source.balance : source.balance,
       equivalent: true,
@@ -112,8 +112,8 @@ export function ExpensesTable({ state, setState, openModal, openIncomeModal, ope
                     {lastMonthPaid(source) === true && <Tooltip title="Last month paid">
                       <Chip size="small" sx={{ background: PAID_BG, fontWeight: 400 }} label={lastMonthCleared(source) === null ? "Last month paid" : `Last month paid ${currencySymbol(source.currency)}${numberFormat(lastMonthCleared(source), 2)}`} />
                     </Tooltip>}
-                    {lastMonthPaid(source) === false && <Tooltip title="Last month owed">
-                      <Chip size="small" sx={{ background: UNPAID_BG, fontWeight: 400 }} label={`Last month owed ${currencySymbol(source.currency)}${numberFormat(lastMonthOwed(source), 2)}`} />
+                    {lastMonthPaid(source) === false && <Tooltip title="Last month due">
+                      <Chip size="small" sx={{ background: UNPAID_BG, fontWeight: 400 }} label={`Last month due ${currencySymbol(source.currency)}${numberFormat(lastMonthOwed(source), 2)}`} />
                     </Tooltip>}
                   </div>
                   <div className="source-chips">

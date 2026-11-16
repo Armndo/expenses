@@ -85,7 +85,7 @@ function Line({ children, color }) {
  * month closes the first line (`billsIn`).
  */
 function SourceLines({ preview, named, billsIn }) {
-  const label = preview.card ? "owed" : "balance"
+  const label = preview.card ? "to pay" : "balance"
   const bad = !preview.card && preview.after < 0
   const settled = preview.card && preview.after <= 0.005
   const text = (words) => named ? `${preview.name} ${words}` : `${words[0].toUpperCase()}${words.slice(1)}`
@@ -95,7 +95,7 @@ function SourceLines({ preview, named, billsIn }) {
       {text(label)} {money(preview.before, preview.currency)} → <strong>{money(preview.after, preview.currency)}</strong>{billsIn && <>, bills in <strong>{billsIn}</strong></>}
     </Line>}
     {preview.lastOwed && Math.abs(preview.lastOwed.before - preview.lastOwed.after) >= 0.005 && <Line color={preview.lastOwed.after <= 0.005 ? GREEN : undefined}>
-      {text("last month owed")} {money(preview.lastOwed.before, preview.currency)} → <strong>{money(preview.lastOwed.after, preview.currency)}</strong>{Math.abs(preview.change) < 0.005 && billsIn && <>, bills in <strong>{billsIn}</strong></>}
+      {text("last month due")} {money(preview.lastOwed.before, preview.currency)} → <strong>{money(preview.lastOwed.after, preview.currency)}</strong>{Math.abs(preview.change) < 0.005 && billsIn && <>, bills in <strong>{billsIn}</strong></>}
     </Line>}
   </>
 }

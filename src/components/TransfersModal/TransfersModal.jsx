@@ -207,7 +207,7 @@ export function TransfersModal({ state, setState }) {
               size="small"
               variant="outlined"
               onClick={() => editTransfer(crosses ? "received_amount" : "amount", owed.toFixed(2))}
-            >Pay owed {numberFormat(owed, 2, currencySymbol(to.currency))}</Button></Box>}
+            >Pay due {numberFormat(owed, 2, currencySymbol(to.currency))}</Button></Box>}
             <RecordPreview state={state} kind="transfer" />
             <TextField
               sx={{ width: "100%" }}

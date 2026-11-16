@@ -6,8 +6,8 @@ export const FILTER_TYPES = [
   { key: "expenses", label: "Expenses" },
   { key: "recurring", label: "Recurring" },
   { key: "instalments", label: "Instalments" },
-  { key: "incomes", label: "Incomes" },
   { key: "transfers", label: "Transfers" },
+  { key: "incomes", label: "Incomes" },
 ]
 
 const TYPES_KEY = "filterTypes"
@@ -63,7 +63,7 @@ function pesos(item, group, source, rates) {
 const AMOUNT_GROUPS = ["expenses", "recurring", "instalments"]
 
 /** The groups of rows of a source, in the order of the table. */
-const GROUPS = ["expenses", "recurring", "instalments", "incomes", "transfers"]
+const GROUPS = ["expenses", "recurring", "instalments", "transfers", "incomes"]
 
 function every(source, group, items, filters, context, needles) {
   if (!filters.types[group]) {
